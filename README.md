@@ -37,7 +37,7 @@ options(mc.cores = parallel::detectCores())
    * See ?bayesplot_theme_set for details on theme setting
 ```
 
-If you do not see that message then the package is not loading properly. In this case make sure you are using the latest versions of R and RStudio. If not, upgrade to the latest versions and try again. I have provided some instructions to help with this: http://people.virginia.edu/~jcf2d/install_update_r_rstudio.html 
+If you do not see that message then the package is not loading properly. In this case make sure you are using the latest versions of R and RStudio. If not, upgrade to the latest versions and try again. I have provided some instructions to help with this: [http://people.virginia.edu/~jcf2d/install_update_r_rstudio.html](http://people.virginia.edu/~jcf2d/install_update_r_rstudio.html )
 
 If you already have the rstanarm package installed, you may want to see if package updates are available. 
 
