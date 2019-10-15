@@ -142,7 +142,7 @@ We use Bayes' theorem to update our prior distribution to get a posterior distri
 $$posterior = \frac{likelihood \times prior}{average\, likelihood} $$ 
 
 - prior is how we believe a _parameter_ of interest is distributed
-- likelihood is the probability of observed data given a certain parameter, eg. $P(18.9|\mu = 16)$
+- likelihood is the probability of observed data given a certain parameter, eg. $P(16.1|\mu = 17)$
 - posterior is the updated prior
 - average likelihood ensures the posterior is a distribution with area that sums to 1 (ie, a probability distribution)
 
