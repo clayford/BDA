@@ -18,7 +18,7 @@ library(rstanarm)
 # Estimate the mean weight of student backpacks at UVa.
 
 # read in data
-dat <- read.csv("backpacks.csv")
+dat <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/backpacks.csv")
 summary(dat)
 mean(dat$backpacks)
 hist(dat$backpacks)
@@ -132,7 +132,7 @@ posterior_interval(m3)
 # battery experiment ------------------------------------------------------
 
 # read in data
-bat <- read.csv("http://people.virginia.edu/~jcf2d/data/batteries.csv")
+bat <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/batteries.csv")
 summary(bat)
 aggregate(y ~ grp, data = bat, mean)
 
