@@ -1,3 +1,5 @@
+View as a webpage: [https://clayford.github.io/BDA/](https://clayford.github.io/BDA/)
+
 # Bayesian Data Analysis in R   
 Part 1 - Oct 16, 2019   
 Part 2 - Oct 23, 2019   
