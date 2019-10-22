@@ -17,7 +17,7 @@ In part two of this two-part series, we dive deeper into statistical modeling fr
 [Download Part 1 presentation slides](https://github.com/clayford/BDA/raw/master/bda_pres_part_1.pdf)  
 [Download Part 2 presentation slides](https://github.com/clayford/BDA/raw/master/bda_pres_part_2.pdf)
 
-[Download Part 1 R script](https://github.com/clayford/BDA/raw/master/bda_part_1_script.R) **Right click and Save Link As...**
+[Download Part 1 R script](https://github.com/clayford/BDA/raw/master/bda_part_1_script.R) **Right click and Save Link As...**   
 [Download Part 2 R script](https://github.com/clayford/BDA/raw/master/bda_part_2_script.R) **Right click and Save Link As...**
 
 ## Getting Ready
