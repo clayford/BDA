@@ -14,17 +14,19 @@ In part two of this two-part series, we dive deeper into statistical modeling fr
 
 ## Workshop materials
 
-[Download Part 1 presentation slides](https://github.com/clayford/BDA/raw/master/bda_pres_part_1.pdf)
+[Download Part 1 presentation slides](https://github.com/clayford/BDA/raw/master/bda_pres_part_1.pdf)  
+[Download Part 2 presentation slides](https://github.com/clayford/BDA/raw/master/bda_pres_part_2.pdf)
 
-[Download Part 1 R script](https://github.com/clayford/BDA/raw/master/bda_part_1_script.R) **Right click and Save Link As...**
+[Download Part 1 R script](https://github.com/clayford/BDA/raw/master/bda_part_1_script.R) **Right click and Save Link As...**   
+[Download Part 2 R script](https://github.com/clayford/BDA/raw/master/bda_part_2_script.R) **Right click and Save Link As...**
 
 ## Getting Ready
 
 To participate in the workshop, please bring a laptop with R and RStudio installed. The workshop assumes basic knowledge of R and RStudio such as how to open an R script and submit R code to the console. 
 
-We will use the following package in the workshop: rstanarm
+We will use the following packages in the workshop: rstanarm, ggeffects
  
-I recommend installing the package well before the start of the workshop. In RStudio, go to Tools…Install Packages, enter the package name and click Install. Once the package is installed, type library(rstanarm) in the console and verify you can load the package. You should get a message like the following:
+I recommend installing the packages well before the start of the workshop. In RStudio, go to Tools…Install Packages, enter the package names separated by a space and click Install. Once the packages are installed, type library(rstanarm) in the console and verify you can load the package. You should get a message like the following:
 
 ```
 rstanarm (Version 2.19.2, packaged: 2019-10-01 20:20:33 UTC)
