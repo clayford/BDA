@@ -13,7 +13,7 @@ library(ggplot2)
 # Example: model patient satisfaction scores as a function of age, anxiety
 # level, and illness severity.
 
-ps <- read.csv("data/patient_satisfaction.csv")
+ps <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/patient_satisfaction.csv")
 # Source: Applied Linear Statistical Models, 5th Edition (page 250)
 
 # ps = patient satisfaction score (dependent variable)
@@ -382,7 +382,7 @@ ggplot(whiteside, aes(x = Temp, y = Gas, color = Insul)) +
 
 # Let's analyze data from a double-blind clinical trial investigating a new
 # treatment for rheumatoid arthritis. (From the vcd package)
-arthritis <- read.csv("data/arthritis.csv")
+arthritis <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/arthritis.csv")
 
 # Treatment = factor indicating treatment (Placebo, Treated).
 # Sex = factor indicating sex (Female, Male).
@@ -645,7 +645,7 @@ walk2(priors$prior$adjusted_scale,
 # can we model PSA as a linear function of other variables? 
 # Is there a "best" model?
 
-pros <- read.csv("data/prostate.csv")
+pros <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/prostate.csv")
 str(pros)
 summary(pros)
 pros$svi <- factor(pros$svi, labels = c("No","Yes"))
