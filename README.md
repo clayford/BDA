@@ -1,6 +1,6 @@
 # Bayesian Data Analysis in R   
-Part 1 - Oct 16, 2019   
-Part 2 - Oct 23, 2019   
+Part 1 - Feb 17, 2022    
+Part 2 - Feb 24, 2022   
 
 ## Workshop descriptions
 
@@ -29,17 +29,14 @@ We will use the following packages in the workshop: rstanarm, ggeffects
 I recommend installing the packages well before the start of the workshop. In RStudio, go to Tools…Install Packages, enter the package names separated by a space and click Install. Once the packages are installed, type library(rstanarm) in the console and verify you can load the package. You should get a message like the following:
 
 ```
-rstanarm (Version 2.19.2, packaged: 2019-10-01 20:20:33 UTC)
-- Do not expect the default priors to remain the same in future rstanarm versions.
-Thus, R scripts should specify priors explicitly, even if they are just the defaults.
+This is rstanarm version 2.21.1
+- See https://mc-stan.org/rstanarm/articles/priors for changes to default priors!
+- Default priors may change, so it's safest to specify priors, even if equivalent to the defaults.
 - For execution on a local, multicore CPU with excess RAM we recommend calling
-options(mc.cores = parallel::detectCores())
-- bayesplot theme set to bayesplot::theme_default()
-   * Does _not_ affect other ggplot2 plots
-   * See ?bayesplot_theme_set for details on theme setting
+  options(mc.cores = parallel::detectCores())
 ```
 
-If you do not see that message then the package is not loading properly. In this case make sure you are using the latest versions of R and RStudio. If not, upgrade to the latest versions and try again. I have provided some instructions to help with this: [http://people.virginia.edu/~jcf2d/install_update_r_rstudio.html](http://people.virginia.edu/~jcf2d/install_update_r_rstudio.html )
+If you do not see that message then the package is not loading properly. In this case make sure you are using the latest versions of R and RStudio. If not, upgrade to the latest versions and try again. I have provided some instructions to help with this: [https://clayford.github.io/r_install/](https://clayford.github.io/r_install/)
 
 If you already have the rstanarm package installed, you may want to see if package updates are available. 
 
@@ -49,5 +46,5 @@ If you already have the rstanarm package installed, you may want to see if packa
 4.	It’s probably easiest to just click Select All and then click Install Updates. That will update all packages.
 5.	If you get a message that asks “Do you want to install from sources the packages which need compilation?”, click No.
 
-If at any point during package installation you get an error or encounter a problem, try entering the error message into Google and see if you can find a solution. Otherwise please arrive early the day of the workshop and I will do my best to help resolve the issue.  
+If at any point during package installation you get an error or encounter a problem, try entering the error message into Google and see if you can find a solution. Otherwise please contact me and I’ll do my best to help resolve the error: clayford@virginia.edu    
  
