@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Data Analysis, Part 1"
 author: "Clay Ford"
-date: "Fall 2019"
+date: "Spring 2022"
 output: 
     beamer_presentation: 
         fig_caption: false
@@ -35,16 +35,17 @@ Assume there is some fixed but unknown mean backpack weight. If we could see all
 - calculate a 95% confidence interval: $(15.2, 16.9)$
 - We might say we're 95% confident the true mean is between 15.2 and 16.9
 
-If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. 
+If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. (NOTE: A confidence interval is NOT a probability interval.)
 
-[^1]: If we assume backpack weights are normally distributed, then we also have to estimate the standard deviation in order to calculate the traditional confidence interval.  
+[^1]: We also have to estimate the standard deviation in order to calculate the traditional confidence interval.  
+
 
 ## The Bayesian approach
 
 Instead of estimating some "true" mean, we instead estimate the _probability distribution_ of possible means.
 
 * begin with a _prior_ distribution of how we believe the means are distributed
-* update the prior distribution using the data we collected to obtain a _posterior_ distribution
+* update the prior distribution using the data we collected to obtain a _posterior_ distribution using _Bayes' theorem_
 * use the posterior distribution to describe the mean of students' backpacks
 
 **The "estimate" is the _entire_ posterior distribution.**
@@ -86,6 +87,7 @@ abline(v = 16.5, lty=2)
 text(x = 16.5, y = 0.7, labels = "P(15.5 < m < 16.5) = 0.74", pos = 4)
 ```
 
+
 ## Another motivating example
 
 Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? 
@@ -104,7 +106,7 @@ Assume there is some fixed but unknown difference in means. If we had access to 
 - calculate a 95% CI of difference: $(0.39, 1.34)$
 - We might say we're 95% confident the true difference is between 0.39 and 1.34
 
-If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. 
+If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. (Reminder: A CI is not a probability interval.)
 
 We might also do a t-test to estimate the probability of getting a difference as large (or larger) if the true difference was 0 (ie, a _p-value_).
 
@@ -113,8 +115,8 @@ We might also do a t-test to estimate the probability of getting a difference as
 Instead of estimating some "true" value, we instead estimate the _probability distribution_ of possible differences.
 
 * begin with a _prior_ distribution of how we believe the differences are distributed
-* update the prior distribution using the data we collected to obtain a _posterior_ distribution
-* use the posterior distribution to describe the differences in brands
+* update the prior distribution using the data we collected to obtain a _posterior_ distribution using _Bayes' theorem_
+* use the posterior distribution to describe the difference in brands
 
 
 ## Example of a prior distribution
@@ -135,6 +137,8 @@ After observing our data we use _Bayes' theorem_ to update our prior distributio
 There's about a 95% probability the mean difference is between 0.4 and 1.3.
 ![](img/d_posterior2.jpeg)
 
+
+
 ## Bayes' theorem in words
 
 We use Bayes' theorem to update our prior distribution to get a posterior distribution.
@@ -154,7 +158,6 @@ $$posterior = \frac{likelihood \times prior}{average\, likelihood} $$
 - MCMC draws samples from the posterior distribution
 - This requires computing time, sometimes lots of time
 - The goal today is show you how to do this in R using the `rstanarm` package
-
 
 
 ## The `rstanarm` package
@@ -234,7 +237,7 @@ posterior_interval(bm1, prob = 0.95,
 Calculate a confidence interval using `t.test`
 
 ```{r cache=TRUE}
-bat <- read.csv("batteries.csv")
+bat <- read.csv("data/batteries.csv")
 t.test(y ~ grp, data = bat)
 ```
 
@@ -317,6 +320,8 @@ We should do this before interpreting results and making inferences.
 
 There are several diagnostics that can help with this. 
 
+Thankfully `rstanarm` provides warnings when sampling is suspect.
+
 ## Visual assessment of convergence
 
 - MCMC uses _Markov chains_ to explore the shape of the posterior distribution
@@ -335,19 +340,19 @@ There are several diagnostics that can help with this.
 ![](img/trace2.jpeg)
 
 
-## Numerical assessment of convergence
+## Numerical assessment of convergence (`Rhat`)
 
 - The $\hat{R}$ statistic compares variation between the chains to the variation within chains
 - If all chains converge to the same region, then $\hat{R}$ should be close to 1
 - If $\hat{R} < 1.1$ we have good, though not infallible, evidence of convergence
 - Each parameter that has a posterior distribution will have a separate $\hat{R}$ statistic
 - We would like them all less than 1.1
-- Included in the `summary` output of the model in the "Diagnostics" section
+- Included in the `summary` output of the model in the "MCMC diagnostics" section
 
 ## Dealing with convergence issues
 
 - If the Markov chains do not converge, you'll get a warning that says "`Markov chains did not converge! Do not analyze results!`"
-- This can often be resolved by increasing the number of iterations using the `iter` argument.
+- This can sometimes be resolved by increasing the number of iterations using the `iter` argument.
 - Example, increase from 2000 to 4000:
 
 ```{r eval=FALSE}
@@ -359,23 +364,23 @@ stan_glm(y ~ grp, data = bat, family = gaussian,
 
 
 
-## Effective sample size (ESS)
+## Effective sample size (`n_eff`)
 
 - MCMC sampling is not independent and can exhibit autocorrelation
 - Each of the 4 chains is run for 2000 iterations, with the first 1000 as a "warm-up"
 - "warm-up" iterations are discarded
-- The means we could have $4 \times 1000 = 4000$ samples
-- The Effective sample size (ESS) corrects for any autocorrelation and approximates the number of independent samples we have
+- This means we have $4 \times 1000 = 4000$ samples
+- The Effective Sample Size (ESS) corrects for any autocorrelation and approximates the number of independent samples we have
 - We'd like to see ESS > 1000
-- Included in the `summary` output of the model in the "Diagnostics" section
+- Included in the `summary` output of the model in the "MCMC diagnostics" section
 
 
-## Monte carlo standard error (MCSE)
+## Monte carlo standard error (`mcse`)
 
 - Helps assess error introduced by MCMC sampling
 - Approximated by dividing posterior standard deviation of a parameter by its ESS
 - a low MCSE relative to the posterior standard deviation results in higher ESS, which is what we want
-- Included in the `summary` output of the model in the "Diagnostics" section
+- Included in the `summary` output of the model in the "MCMC diagnostics" section
 
 ## Posterior predictive checking (PPC)
 
@@ -418,10 +423,7 @@ Common summaries include:
 
 - These summarize the spread of the posterior distribution
 - Probably not useful if a posterior distribution is skewed
-- Recall that MCSE is compared to posterior standard deviations
 - Also provided in the `summary` output
-
-
 
 ## Posterior distributions revisited
 
@@ -492,7 +494,7 @@ Kovic, M. and Hänsli, N. (2017) The impact of political cleavages, religiosity,
 
 ## References
 
-McElreath, M. (2016). _Statistical Rethinking_. CRC Press. Boca Raton.
+McElreath, M. (2020). _Statistical Rethinking, 2nd Ed._. CRC Press. Boca Raton.
 
 Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. _The Quantitative Methods for Psychology_, 14(2), 99-119. doi:10.20982/tqmp.14.2.p099
 
