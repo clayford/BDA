@@ -1,7 +1,7 @@
 # Bayesian Data Analysis, Part 1
-# Spring 2022
-# UVA Library - Research Data Services
 # Clay Ford
+# UVA Library StatLab
+# Spring 2022
 
 
 
@@ -28,7 +28,6 @@ t.test(dat$backpacks)
 save.out <- t.test(dat$backpacks)
 save.out$conf.int
 
-
 # Let's re-do our analysis in the form of a model.
 
 # traditional model-based approach: intercept-only linear model
@@ -51,6 +50,7 @@ confint(glm1)
 
 # Bayesian model-based approach
 
+# Use stan_glm() from rstanarm package
 # Use the prior_intercept argument to specify the prior;
 # prior based on the following article:
 # https://well.blogs.nytimes.com/2009/07/21/weighing-school-backpacks/
@@ -67,8 +67,12 @@ bmod1 <- stan_glm(backpacks ~ 1,
 # should get a warning message in red saying not to trust the results.
 
 # you can turn off sampling messages by adding the argument `refresh = 0`
+# Not Recommended!
 
+# Here's a compact summary of the Bayesian model
 bmod1
+
+# The medians are the medians of the posterior distributions.
 
 # Notice the auxiliary parameter. The Bayesian model returns a posterior
 # distribution for the estimated population standard deviation (aka, residual
@@ -84,6 +88,8 @@ plot(bmod1, plotfun = "dens")
 # And here are the priors that were used
 prior_summary(bmod1) 
 
+# In normal(), location = mean, scale = standard deviation
+
 # If we don't specify a prior, rstanarm provides one for us and then adjusts its
 # scale. We didn't specify a prior for sigma, so rstanarm used an exponential
 # distribution with rate = 1. The adjusted prior for the exponential
@@ -97,16 +103,16 @@ prior_summary(bmod1)
 # prior distribution for intercept
 # dnorm() is the normal density function
 curve(dnorm(x,mean = 18, sd = 5), 
-      from = 18 + -3*5, 
-      to = 18 + 3*5)
+      from = 18 + -3*5,        # mean - 3 SD 
+      to = 18 + 3*5)           # mean + 3 SD
 
 # prior distribution for sigma
 # dexp() is the exponential density function. It is positive, so it's a
 # reasonable choice for sigma, which is always positive.
 # 6/rate is a decent choice for the `to` argument
-curve(dexp(x, rate = 0.05), 
+curve(dexp(x, rate = 0.23), 
       from = 0, 
-      to = 6/0.05)
+      to = 6/0.23)
 
 # As the rate gets smaller, the distribution gets wider. 
 
@@ -117,30 +123,20 @@ curve(dexp(x, rate = 0.05),
 # Refit the model above with the following different priors and compare the
 # resulting posterior intervals. How different are they?
 
+# Model m1
 # prior_intercept = normal(0, 1)
 # prior_aux = exponential(1)
 
+# Model m2
 # prior_intercept = normal(100, 1000)
 # prior_aux = exponential(0.05)
 
+# Model m3
 # prior_intercept = NULL 
 # prior_aux = NULL 
 
 # The last one, NULL, means a uniform prior giving equal weight to -Inf to Inf
 
-m1 <- stan_glm(backpacks ~ 1, data = dat,
-               prior_intercept = normal(0, 1),
-               prior_aux = exponential(1))
-m2 <- stan_glm(backpacks ~ 1, data = dat,
-               prior_intercept = normal(100, 1000),
-               prior_aux = exponential(0.005))
-m3 <- stan_glm(backpacks ~ 1, data = dat,
-               prior_intercept = NULL,
-               prior_aux = NULL)
-
-posterior_interval(m1)
-posterior_interval(m2)
-posterior_interval(m3)
 
 
 # battery experiment ------------------------------------------------------
@@ -159,7 +155,7 @@ lm.out <- lm(y ~ grp, data = bat)
 summary(lm.out)
 
 # Intercept is mean of group 0
-# grp (slope) is difference between group 0 and group 1
+# grp is difference between group 0 and group 1
 # Residual standard error (0.8371) is pooled standard deviation 
 
 # CI of slope parameter (ie difference in means between group 0 and group 1)
@@ -185,36 +181,41 @@ posterior_interval(bmod3, prob = 0.95)
 posterior_interval(bmod3, prob = 0.95, pars = "grp")
 
 # And here are the default priors that were used
-prior_summary(bmod3)
+prior_summary(bmod3, digits = 4)
 
 # "adjusted scale" means the prior distribution was rescaled to be on the same
 # range of the outcome variable.
 
 # http://mc-stan.org/rstanarm/articles/priors.html
 
-# Intercept: 2.5 * sd(y)
+# Intercept: 
+# location = mean(y)
+# scale = 2.5 * sd(y)
 2.5 * sd(bat$y)
 
-# Coefficients: 2.5 * (sd(y)/sd(x_k)) (for kth coefficient)
+# Coefficients: 
+# location = 0
+# scale = 2.5 * (sd(y)/sd(x_k)) (for kth coefficient)
 2.5 * (sd(bat$y)/sd(bat$grp))
 
-# Auxiliary: 1/sd(y)
+# Auxiliary: 
+# rate = 1/sd(y)
 1/sd(bat$y)
 
 
 # We can also, and probably should, set our own priors.
 # Set intercept to N(10,4) - mean of group 0
-# Set slope to N(0,3) - difference between group 0 and group 1
-# set SE (sigma) to exponential(0.5) - pooled standard deviation (or residual SE);
+# Set grp to N(0,3) - difference between group 0 and group 1
+# set sigma to exponential(0.5) - pooled standard deviation (or residual SE);
 # setting to 0.5 increases the uncertainty
 
 # visualize prior distributions
 curve(dnorm(x, 10, 4), 
-      from = 2, to = 18, 
+      from = 10 - 3*4, to = 10 + 3*4, 
       main = "Prior for mean of group 0 (intercept)")
 curve(dnorm(x, 0, 3), 
-      from = -6, to = 6, 
-      main = "Prior for difference in means (slope)")
+      from = -3*3, to = 3*3, 
+      main = "Prior for difference in means")
 curve(dexp(x, rate = 0.5), 
       from = 0, to = 6/0.5, 
       main = "Prior for pooled standard deviation")
@@ -256,7 +257,7 @@ confint(mod1, parm = "foot")
 handfoot$footC <- handfoot$foot - mean(handfoot$foot)
 mod2 <- lm(hand ~ footC, data = handfoot)
 summary(mod2)
-confint(lm2, parm = "footC")
+confint(mod2, parm = "footC")
 
 # Intercept is expected hand size for an "average" foot size (ie, when footC =
 # 0)
@@ -268,22 +269,13 @@ confint(lm2, parm = "footC")
 # "bmod5". Use the default priors. Then investigate the posterior interval of
 # the footC coefficient.
 
-bmod5 <- stan_glm(hand ~ footC, data = handfoot, family = gaussian)
 
-plot(bmod5, plotfun = "dens", pars = "footC")
-
-posterior_interval(bmod5, pars = "footC")
 
 # 2) Repeat the Bayesian analysis but this time with your own priors. Call the
-# model "bmod6". Set the intercept prior to normal(6,1) and the slope prior to
-# normal(0.4,0.2).
+# model "bmod6". Set the intercept prior to normal(6,1) and coefficients prior
+# to normal(0.4,0.2).
 
-bmod6 <- stan_glm(hand ~ footC, data = handfoot, family = gaussian, 
-                  prior_intercept = normal(6, 1), prior = normal(0.4, 0.2))
 
-plot(bmod6, plotfun = "dens", pars = "footC")
-
-posterior_interval(bmod6, pars = "footC")
 
 # Back to presentation
 
@@ -324,18 +316,20 @@ plot(bmod4_x, plotfun = "trace", pars = "grp")
 # experience non-convergence.
 
 
-# R-hat statistics provides a numerical assessment of convergence;
+# Rhat statistics provides a numerical assessment of convergence;
 # want R-hat < 1.1
 
-# ESS (effective sample size) estimates number of independent samples after
-# correcting for autocorrelation; want ESS > 1000
+# n_eff (effective sample size) estimates number of independent samples after
+# correcting for autocorrelation; want n_eff > 1000
 
 # MCSE assess error introduced by MCMC; would like it small relative to
 # parameters' posterior standard deviation.
 
-# R-hat, MCSE and EFF are available in the summary under diagnostics
+# MCSE, Rhat EFF are available in the summary under MCMC diagnostics
 summary(bmod1)
 summary(bmod4)
+
+# The log-posterior is the logarithm of the posterior. This value is sometimes used for assessing predictive accuracy and for model comparison. 
 
 # Again these all look good.
 
@@ -348,8 +342,9 @@ summary(bmod4)
 # backpack model
 pp_check(bmod1)
 
-# The dark line is a density plot (smooth histogram) of the observed data
-plot(density(dat$backpacks))
+# The dark line is a density plot (smooth histogram) of the observed data. 
+hist(dat$backpacks, freq = FALSE, ylim = c(0,0.15))
+lines(density(dat$backpacks))
 
 # What is going on with `pp_check`? It is drawing values from the posterior distributions and using those values in our "model" to generate data.
 
@@ -366,13 +361,13 @@ parms
 # from our posterior distributions into rnorm() to generate a set of data.
 d1 <- rnorm(n = 100, 
             mean = parms$`(Intercept)`, 
-            sd = parms$`(Intercept)`)
+            sd = parms$sigma)
 
 # and then plot.
 plot(density(d1))
 
 # That's what `pp_check()` is doing. Randomly sampling parameter estimates from
-# the posterior distribtions and then generating data.
+# the posterior distributions and then generating data.
 
 # We can do it, too. Apply the "model" to the rows of the posterior samples.
 
@@ -386,12 +381,12 @@ sim <- apply(post_samp, 1, function(x)rnorm(100, mean = x[1], sd = x[2]))
 plot(density(dat$backpacks))
 for(i in 1:30)lines(density(sim[,i]), col = "grey80")
 
+# That's what pp_check() does, but with random rows. 
+pp_check(bmod1)
 
-# battery model
+
+# battery model pposterior predictive check
 pp_check(bmod4)
-
-# use the nrep argument to graph more (or less) simulations
-pp_check(bmod4, nreps = 100)
 
 # Again the dark line is a density plot of the observed data
 plot(density(bat$y))
@@ -457,21 +452,19 @@ summary(lm_cereal)
 # good since we likely don't have any prior knowledge or hunches about these
 # designs. Call the model "blm_cereal"
 
-blm_cereal <- stan_glm(sales ~ design, data = cereal)
+
 
 # 2) Create a trace plot to assess convergence.
-plot(blm_cereal, plotfun = "trace")
 
-# 2) How does MCSE, Rhat and n_eff look?
-summary(blm_cereal)
 
-# 3) Perform two posterior predictive checks: The default and one using 
+
+# 3) How does MCSE, Rhat and n_eff look?
+
+
+
+# 4) Perform two posterior predictive checks: The default and one using 
 #    plotfun = "stat_grouped" as we did above
-pp_check(blm_cereal)
 
-pp_check(blm_cereal, plotfun = "stat_grouped", 
-         stat = "mean", 
-         group = "design")
 
 
 # back to presentation.
@@ -539,27 +532,19 @@ coef(blm_cereal) # medians of posterior distributions
 
 # Create and use a posterior summary to answer the following questions:
 
-post_cereal <- as.data.frame(blm_cereal)
 
 # 1) What is the estimated probability the difference between design 3 and
 # design 1 is greater than 4?
 
-mean(post_cereal$design3 > 4)
+
 
 # 2) Calculate a 95% credibility interval for the mean of design 3.
 
-quantile(post_cereal$`(Intercept)` + post_cereal$design3, 
-         probs = c(0.025, 0.975))
 
 
 # 3) Calculate a 95% credibility interval for the difference between design 3
 # and design 4.
 
-design3 <- post_cereal$`(Intercept)` + post_cereal$design3
-design4 <- post_cereal$`(Intercept)` + post_cereal$design4
-
-quantile(design4 - design3, 
-         probs = c(0.025, 0.975))
 
 
 
@@ -747,9 +732,9 @@ prior_log <- dnorm(means, mean = 18, sd = 5, log = TRUE)
 
 # Likelihood of data if mean is 2 and sd = 4
 sum(dnorm(x = dat$backpacks, mean = 2, sd = 4, log = TRUE))
-# Probablility of data if mean is 10 and sd = 4
+# Probability of data if mean is 10 and sd = 4
 sum(dnorm(x = dat$backpacks, mean = 10, sd = 4, log = TRUE))
-# Probablility of data if mean is 20 and sd = 4
+# Probability of data if mean is 20 and sd = 4
 sum(dnorm(x = dat$backpacks, mean = 20, sd = 4, log = TRUE))
 
 # Notice we set sd = 4. That's actually a second parameter that needs a prior

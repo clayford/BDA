@@ -1,7 +1,7 @@
-# Bayesian Data Analysis, Part 2
-# Fall 2019
-# UVa Library - Research Data Services
+# Bayesian Data Analysis, Part 1
 # Clay Ford
+# UVA Library StatLab
+# Spring 2022
 
 library(rstanarm)
 library(ggeffects)
