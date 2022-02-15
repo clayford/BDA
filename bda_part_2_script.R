@@ -59,7 +59,7 @@ mod1 <- stan_glm(ps ~ age + illness + anxiety,
 # sophisticated sampling engine. If something goes wrong with the sampling, you
 # should get a warning message in red saying not to trust the results.
 
-# which priors were used? Notice the scale is adjusted to accomodate the range
+# which priors were used? Notice the scale is adjusted to accommodate the range
 # of the data. These are "weakly informative". They rule out extreme values,
 # which helps with the sampling.
 prior_summary(mod1)

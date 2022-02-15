@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Data Analysis, Part 2"
 author: "Clay Ford"
-date: "Fall 2019"
+date: "Spring 2022"
 output: 
     beamer_presentation: 
         fig_caption: false
@@ -17,7 +17,6 @@ knitr::opts_chunk$set(echo = TRUE)
 - Implement more complex Bayesian analyses
 - model visualization
 - model comparison
-
 
 
 ## Review: Bayesian statistics
@@ -228,8 +227,7 @@ bm <- stan_glm(ps ~ age + illness + anxiety,
 
 Instead of point estimates for the betas and $\sigma$, we get posterior distributions.
 
-[^1]: On startup, rstanarm states "Do not expect the default priors to remain the same in future rstanarm versions.
-Thus, R scripts should specify priors explicitly, even if they are just the defaults."
+[^1]: On startup, rstanarm states "Default priors may change, so it's safest to specify priors, even if equivalent to the defaults."
 
 ## Using `stan_glm` with explicit priors
 
@@ -239,21 +237,13 @@ Use the `prior` arguments to specify priors. Below are the default priors. The `
 bm <- stan_glm(ps ~ age + illness + anxiety, 
                data = ps,
                family = gaussian,
-               prior_intercept = normal(0,10),
+               prior_intercept = normal(mean(ps$ps),10),
                prior = normal(c(0,0,0),c(2.5,2.5,2.5)),
                prior_aux = exponential(1))
 
 ```
 
 The scale, or spread, of the priors is automatically rescaled to accommodate the range of the data.
-
-
-## Using `prior_summary`
-
-
-```{r}
-prior_summary(bm)
-```
 
 
 ## Evaluating and exploring the model
@@ -587,7 +577,7 @@ The standard error of the difference, `se_diff`, gives us some idea of how much 
 
 ## `loo` versus `waic`
 
-McElreath (2016) recommends using WAIC for model selection. Vehtari, Gelman, and Gabry (2017) recommend Leave-one-out cross-validation (LOO).   
+Vehtari, Gelman, and Gabry (2017) recommend Leave-one-out cross-validation (LOO).   
 \  
 
 > Although WAIC is asymptotically equal to LOO, we demonstrate that PSIS-LOO is more robust in the finite case with weak priors or influential observations.
