@@ -34,8 +34,8 @@ save.out$conf.int
 lm1 <- lm(backpacks ~ 1, data = dat)
 summary(lm1)
 
-# The model is a Normal distribution with mean = 16.0500 and standard deviation
-# = 4.331
+# The fitted model is a Normal distribution with mean = 16.0500 and standard
+# deviation = 4.331
 
 # confidence interval
 confint(lm1)
@@ -56,6 +56,11 @@ confint(glm1)
 # https://well.blogs.nytimes.com/2009/07/21/weighing-school-backpacks/
 # The normal() function is from the rstanarm package
 
+# Again, the proposed "model" here is a Normal distribution with some mean and
+# standard deviation. Our prior for the mean is N(18, 5). We let rstanarm
+# provide the prior for the standard deviation, which we'll examine below. We're
+# basically saying "we think the process that generated this data is a simply a
+# Normal distribution."
 bmod1 <- stan_glm(backpacks ~ 1, 
                   data = dat, 
                   family = gaussian,
@@ -79,7 +84,9 @@ bmod1
 # standard error)
 
 # Instead of a confidence interval we calculate a posterior interval using the
-# posterior_interval function.
+# posterior_interval function. The "(Intercept)" posterior interval refers to
+# the mean of our model. The "sigma" posterior intercal refers to the standard
+# deviation of our model.
 posterior_interval(bmod1, prob = 0.95)
 
 # Use plot method with `plotfun = "dens"` to see the posterior distributions
@@ -183,7 +190,7 @@ posterior_interval(bmod3, prob = 0.95, pars = "grp")
 # And here are the default priors that were used
 prior_summary(bmod3, digits = 4)
 
-# "adjusted scale" means the prior distribution was rescaled to be on the same
+# "adjusted prior" means the prior distribution was rescaled to be on the same
 # range of the outcome variable.
 
 # http://mc-stan.org/rstanarm/articles/priors.html
@@ -202,6 +209,16 @@ prior_summary(bmod3, digits = 4)
 # rate = 1/sd(y)
 1/sd(bat$y)
 
+# We can visualize these as follows:
+curve(dnorm(x, 10.6, 2.341), 
+      from = 10 - 3*2.341, to = 10 + 3*2.341, 
+      main = "Default Prior for mean of group 0 (intercept)")
+curve(dnorm(x, 0, 4.635), 
+      from = -3*4.635, to = 3*4.635, 
+      main = "Default Prior for difference in means")
+curve(dexp(x, rate = 1.068), 
+      from = 0, to = 6/1.068, 
+      main = "Default Prior for pooled standard deviation")
 
 # We can also, and probably should, set our own priors.
 # Set intercept to N(10,4) - mean of group 0
