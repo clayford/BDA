@@ -59,52 +59,57 @@ mod1 <- stan_glm(ps ~ age + illness + anxiety,
 # sophisticated sampling engine. If something goes wrong with the sampling, you
 # should get a warning message in red saying not to trust the results.
 
-# which priors were used? Notice the scale is adjusted to accommodate the range
-# of the data. These are "weakly informative". They rule out extreme values,
-# which helps with the sampling.
+# which priors were used? "adjusted prior" means the prior distribution was
+# rescaled to be on the same range of the outcome variable. These are "weakly
+# informative". They rule out extreme values, which helps with the sampling.
 prior_summary(mod1)
 
 # How are these adjusted scales obtained?
+# http://mc-stan.org/rstanarm/articles/priors.html
 
-# According to ?priors: "for Gaussian models only, the prior scales for the
-# intercept, coefficients, and the auxiliary parameter sigma are multiplied by
-# sd(y). Additionally.... for a predictor x with more than two unique values, we
-# divide the prior scale(s) by sd(x)"
+# Intercept: 
+# location = mean(y)
+# scale = 2.5 * sd(y)
+2.5 * sd(ps$ps)
 
-priors <- prior_summary(mod1)
-priors$prior
+# Coefficients: 
+# location = 0
+# scale = 2.5 * (sd(y)/sd(x_k)) (for kth coefficient)
+2.5 * (sd(ps$ps)/sd(ps$age))
+2.5 * (sd(ps$ps)/sd(ps$illness))
+2.5 * (sd(ps$ps)/sd(ps$anxiety))
 
-# adjusted scale for age predictor: 4.831881
-priors$prior$adjusted_scale[1]
+# Auxiliary: 
+# rate = 1/sd(y)
+1/sd(ps$ps)
 
-# How is 4.831881 obtained?
-(2.5 * sd(ps$ps))/ sd(ps$age)
 
 # The base R curve() function makes it relatively easy to visualize priors.
-# Example: prior distribution for age
 # dnorm() is the normal density function
-curve(dnorm(x,mean = 0, sd = 4.83), 
-      from = -3*4.83, to = 3*4.83,
-      xlab = "age")
 
 # prior for intercept
-curve(dnorm(x, mean = 0, sd = 172.36), 
-      from = -3*172.36, to = 3*172.36, 
-      xlab = "intercept")
+curve(dnorm(x, mean = 62, sd = 43), 
+      from = 62 + -3*43, to = 62 + 3*43, 
+      xlab = "prior for intercept")
+
+# prior for age
+curve(dnorm(x,mean = 0, sd = 4.83), 
+      from = -3*4.83, to = 3*4.83,
+      xlab = "prior for age")
 
 # prior for sigma; notice we dexp()
 curve(dexp(x, rate = 0.058), 
-      from = 0, to = 3*17.24, 
-      xlab = "sigma")
+      from = 0, to = 6/0.058, 
+      xlab = "prior for sigma")
 
 
 # Making these priors explicit in our model code:
 mod1 <- stan_glm(ps ~ age + illness + anxiety,
                  data = ps,
                  family = gaussian,
-                 prior_intercept = normal(0,10),
-                 prior = normal(c(0,0,0),c(2.5,2.5,2.5)),
-                 prior_aux = exponential(1))
+                 prior_intercept = normal(62,43),
+                 prior = normal(c(0,0,0),c(4.83,9.99,143.95)),
+                 prior_aux = exponential(0.058))
 
 
 # model summary; summary statistics of the posterior distributions;
@@ -130,7 +135,6 @@ summary(mod1)
 #   distribution from which we assume the errors are "drawn".
 
 
-
 # Diagnostics for Bayesian rstanarm models not really automated;
 
 # residuals versus fitted (check for constant variance)
@@ -139,6 +143,9 @@ abline(h = 0, lty = 2)
 
 # check for influential data using loo(); compute approximate leave-one-out
 # (loo) cross-validation
+
+# p_loo = estimated effective number of parameters (should be similar to
+#         specified model); higher than specified model is not good.
 mod1.loo <- loo(mod1)
 mod1.loo
 
@@ -186,8 +193,8 @@ mean(mod1_df$anxiety > 0)
 # what is the probability the effect of age is between -1.0 and -0.5
 mean(mod1_df$age > -1.0 & mod1_df$age < -0.5)
 
-# what is the probability the effect of illness is greater than 0
-mean(mod1_df$illness > 0)
+# what is the probability the effect of illness is less than 0
+mean(mod1_df$illness < 0)
 
 
 # Is this a good model? Assess model fit with posterior predictive check. The
@@ -214,21 +221,18 @@ dim(lm.sim)
 plot(density(ps$ps), ylim = c(0,0.03))
 
 # add simulated data
-for(i in 1:40)lines(density(lm.sim[[i]]), lty = 2, col = "grey80")
+for(i in 1:40)lines(density(lm.sim[[i]]), col = "grey80")
 
 
 # fit a model with custom prior distributions
 # These are probably not good priors!
-# autoscale = F means do not rescale. Use the priors exactly as specified
 mod2 <- stan_glm(ps ~ age + illness + anxiety, 
                  data = ps, 
                  family = gaussian,
                  prior_intercept = normal(location = 100, 
-                                          scale = 50, 
-                                          autoscale = F), 
+                                          scale = 50), 
                  prior = normal(location = c(0, 10, 10), 
-                                scale = c(5, 10, 10), 
-                                autoscale = F), 
+                                scale = c(5, 10, 10)), 
                  prior_aux = NULL) # flat, uniform prior
 
 # evaluate model
@@ -241,7 +245,7 @@ posterior_interval(mod1) # compare to mod1 that used default priors
 
 
 
-# YOUR TURN #1 ------------------------------------------------------------
+# CODE ALONG 1 ------------------------------------------------------------
 
 # Let's examine the record times in 1984 for 35 Scottish hill races.
 data(hills, package = "MASS")
@@ -264,28 +268,33 @@ which(rownames(hills) %in% c("Knock Hill", "Bens of Jura", "Lairig Ghru", "Ben N
 
 
 # (1) Fit an "equivalent" Bayesian model using default priors and review the
-# model summary.
+# model summary. Name the model "hm1".
 
-
+hm1 <- stan_glm(time ~ dist + climb, data = hills)
+summary(hm1)
 
 # (2) View the posterior distributions
 
-
+plot(hm1, plotfun = "dens")
 
 # (3) Assess model fit with a posterior predictive check. Take a careful look at
 # the x-axis.
 
-
+pp_check(hm1)
 
 # (4) Assess the constant variance assumption
 
-
-
+plot(fitted(hm1), residuals(hm1))
+abline(h = 0, lty = 2)
 
 # (5) use loo() to check model for 'outliers' or influential points; save the
-# result to hills.blm.loo and plot it with label_points = TRUE
+# result to hm.loo and plot it with label_points = TRUE
 
+hm.loo <- loo(hm1)
+hm.loo
+plot(hm.loo)
 
+hm.loo <- loo(hm1, k_threshold = 0.7)
 
 # Back to presentation
 
@@ -316,36 +325,37 @@ pp_check(mod3)
 # Effect plots
 
 # visualize the interaction; there does not appear to be any interaction
-plot(ggpredict(mod3, terms = c("age", "illness")))
+ggpredict(mod3, terms = c("age", "illness")) |> plot()
 
 # change the order to change which variable is on the x-axis
-plot(ggpredict(mod3, terms = c("illness", "age"))) 
+ggpredict(mod3, terms = c("illness", "age")) |> plot() 
 
 # Running ggpredict without plot shows the values
 ggpredict(mod3, terms = c("illness", "age"))
 
 # visualize the interaction at ages = 30, 40, 50
-plot(ggpredict(mod3, terms = c("illness", "age [30,40,50]"))) 
+ggpredict(mod3, terms = c("illness", "age [30,40,50]")) |> plot() 
 
 # visualize the interaction at illness = 40, 50, 60
-plot(ggpredict(mod3, terms = c("age", "illness [40,50,60]"))) 
+ggpredict(mod3, terms = c("age", "illness [40,50,60]")) |> plot() 
 
 # main effect plots
-plot(ggpredict(mod3, terms = "anxiety"))
+ggpredict(mod3, terms = "anxiety") |> plot()
 ggpredict(mod3, terms = "anxiety")
 
 # set age and illness to 50
-plot(ggpredict(mod3, terms = "anxiety", 
-               condition = c("age" = 50, 
-                             "illness" = 50)))
+ggpredict(mod3, terms = "anxiety", 
+          condition = c("age" = 50, 
+                        "illness" = 50)) |>
+  plot()
 
 # The default credibility ribbon is for the mean response; setting ppd = TRUE
 # returns the predicted response.
-plot(ggpredict(mod3, terms = "anxiety", ppd = TRUE))
+ggpredict(mod3, terms = "anxiety", ppd = TRUE) |> plot()
 
 
 
-# YOUR TURN #2 ------------------------------------------------------------
+# CODE ALONG 2 ------------------------------------------------------------
 
 # Assess the effect of insulation and temp on gas consumption for heating a
 # home.
@@ -356,24 +366,28 @@ data(whiteside, package = "MASS")
 # Gas = weekly gas consumption in 1000s of cubic feet
 
 summary(whiteside)
-ggplot(whiteside, aes(x = Temp, y = Gas, color = Insul)) +
+ggplot(whiteside) +
+  aes(x = Temp, y = Gas, color = Insul) +
   geom_point()
 
 
 # (1) Fit a Bayesian model that models Gas as a function of Temp, Insul and
-# their interaction. Use the default priors.
+# their interaction. Use the default priors. Name the model gm1.
 
+gm1 <- stan_glm(Gas ~ Temp + Insul + Temp:Insul, data = whiteside)
 
 # (2) view the model summary
 
+summary(gm1)
 
 # (3) view the posterior distributions
 
+plot(gm1, plotfun = "dens")
 
-# (4) create an effect plot to visualize the interaction. Try the terms in
-# different order to see the different plots they create.
+# (4) create an effect plot to visualize the interaction.
 
-
+ggpredict(gm1, terms = c("Temp", "Insul")) |> plot()
+ggpredict(gm1, terms = c("Insul", "Temp[3,5,7]")) |> plot()
 
 # back to presentation
 
@@ -396,8 +410,12 @@ stripchart(Age ~ Better, data = arthritis)
 # Model Better as a function of Treatment, Sex and Age
 # Need to set family = binomial
 # use default priors
-arthritis.blm <- stan_glm(Better ~ Treatment + Sex + Age, data = arthritis,
+arthritis.blm <- stan_glm(Better ~ Treatment + Sex + Age, 
+                          data = arthritis,
                           family = binomial) 
+
+# Look at default priors
+prior_summary(arthritis.blm)
 
 # summary of posterior distributions
 summary(arthritis.blm)
@@ -410,7 +428,7 @@ plot(arthritis.blm, plotfun = "dens")
 coef(arthritis.blm)
 exp(coef(arthritis.blm)[2])
 
-# Odds of getting "better" are about 6 times higher for Treated, versus the odd
+# Odds of getting "better" are about 6 times higher for Treated, versus the odds
 # of getting better when on Placebo. (holding other variables constant)
 
 # check model fit; these are density curves for a 0/1 variable. Perhaps not too
@@ -423,30 +441,35 @@ pp_check(arthritis.blm)
 # instead of log-odds.
 
 # Get effect plots for all three predictors
-plot(ggpredict(arthritis.blm))
+ggpredict(arthritis.blm) |> plot()
 
 # Take advice: "Consider using `terms="Age [all]"` to get smooth plots."
-plot(ggpredict(arthritis.blm, terms = "Age [all]"))
+ggpredict(arthritis.blm, terms = "Age [all]") |> plot()
 
- 
-# YOUR TURN #3 ------------------------------------------------------------
+
+# CODE ALONG 3 ------------------------------------------------------------
+
 
 # (1) Re-fit the Bayesian arthritis model with an interaction for Treatment and
-# Age.
+# Age. Name the model "arthritis.blm2".
 
-
+arthritis.blm2 <- stan_glm(Better ~ Treatment + Sex + Age + Treatment:Age, 
+                           data = arthritis,
+                           family = binomial)
 
 # (2) view the model summary
 
-
+summary(arthritis.blm2, digits = 3)
 
 # (3) view the posterior distributions
 
+plot(arthritis.blm2, plotfun = "dens")
 
 # (4) create an effect plot to visualize the interaction. Try the terms in
 # different order to see the different plots they create.
 
-
+ggpredict(arthritis.blm2, terms = c("Age [all]", "Treatment")) |> plot()
+ggpredict(arthritis.blm2, terms = c("Treatment", "Age[40,50,60]")) |> plot()
 
 # back to presentation
 
@@ -475,15 +498,11 @@ waic(arthritis.blm1)
 waic(arthritis.blm2)
 waic(arthritis.blm3)
 
-# elpd_waic = expected log predictive density. Similar to deviance.
+# elpd_waic = expected log predictive density.
 # p_waic = effective number of parameters. A bias correction used in the
 #          calculation of elpd
 # waic = -2(elpd_waic)
 
-# Confirming waic calculation for first model
-waic.1 <- waic(arthritis.blm1)
-waic.1$estimates
--2* (waic.1$estimates["elpd_waic","Estimate"])
 
 # Compare all models using loo_compare. The "best" model is listed first. Each
 # subsequent comparison is to that model.
@@ -496,10 +515,10 @@ loo_compare(waic(arthritis.blm1),
 # positive, then the second model is preferred. But check the SE of the diff!
 
 # Now what about those warnings?
-waic.2 <- waic(arthritis.blm2) # 3 estimates < 0.4
-waic.3 <- waic(arthritis.blm3) # 2 estimates < 0.4
+waic.2 <- waic(arthritis.blm2) # 4 estimates greater than 0.4 
+waic.3 <- waic(arthritis.blm3) # 3 estimates greater than 0.4
 
-# see the estimates < 0.4
+# see the estimates > 0.4
 head(waic.2$pointwise)
 waic.2$pointwise[waic.2$pointwise[,"p_waic"] > 0.4,]
 
@@ -538,7 +557,8 @@ loo_compare(waic(arthritis.blm1),
 loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), waic))
 loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
 
-# YOUR TURN #4 ------------------------------------------------------------
+
+# CODE ALONG 4 ------------------------------------------------------------
 
 # Fit the following models using the patient satisfaction data:
 ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
@@ -551,9 +571,6 @@ ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
 
 # compare the models using waic and/or loo.
 # TIP: Try the lapply/mget code above with the regular expression "^ps_"
-
-# RECALL: a negative difference means we prefer the first model. A positive
-# difference means we prefer the second model. But check SE of diff.
 
 
 
@@ -748,4 +765,5 @@ ggplot() +
   geom_density(aes(x = value, group = draw), pp.DF, color = "lightblue") +
   geom_density(aes(x = ps), ps) + 
   theme_gray()
+
 

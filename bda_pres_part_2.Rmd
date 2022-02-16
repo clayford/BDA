@@ -338,15 +338,16 @@ The basic syntax to quickly generate an effect plot for our interaction:
 
 ```{r eval=FALSE}
 library(ggeffects)
-plot(ggpredict(bm2, terms = c("age","illness")))
+ggpredict(bm2, terms = c("age","illness")) |> 
+  plot()
 ```
 
 ## An effect plot for the `age:illness` interaction
 
 ```{r message=FALSE, echo=FALSE}
 library(ggeffects)
-plot(ggpredict(bm2, terms = c("age","illness")))
-
+ggpredict(bm2, terms = c("age","illness")) |> 
+  plot()
 ```
 
 
@@ -355,22 +356,22 @@ plot(ggpredict(bm2, terms = c("age","illness")))
 By default ggpredict will pick some values for the 2nd term. We can specify values if we like as follows:
 
 ```{r eval=FALSE}
-plot(ggpredict(bm2, terms = c("age","illness[45,50,55]")))
-
+ggpredict(bm2, terms = c("age","illness[45,50,55]")) |>
+  plot()
 ```
 
 If we want illness on the x-axis:
 
 ```{r eval=FALSE}
-plot(ggpredict(bm2, terms = c("illness","age[30,40,50]")))
-
+ggpredict(bm2, terms = c("illness","age[30,40,50]")) |>
+  plot()
 ```
 
 ## An effect plot for the `age:illness` interaction
 
 ```{r message=FALSE}
-plot(ggpredict(bm2, terms = c("illness","age[30,40,50]")))
-
+ggpredict(bm2, terms = c("illness","age[30,40,50]")) |>
+  plot()
 ```
 
 ## Interpreting interactions in effect plots
@@ -385,8 +386,7 @@ If the plotted lines had vastly different trajectories such that they crossed or
 Effect plots are useful for main effects as well (ie, predictors not involved in an interaction)
 
 ```{r fig.height=5}
-plot(ggpredict(bm2, terms = "anxiety"))
-
+ggpredict(bm2, terms = "anxiety") |> plot()
 ```
 
 The 95% credibility ribbon is for the _mean_ response value.
@@ -396,8 +396,7 @@ The 95% credibility ribbon is for the _mean_ response value.
 Set `ppd = TRUE` to get a prediction interval.
 
 ```{r fig.height=5}
-plot(ggpredict(bm2, terms = "anxiety", ppd = TRUE))
-
+ggpredict(bm2, terms = "anxiety", ppd = TRUE) |> plot()
 ```
 
 The 95% credibility ribbon is for the _predicted_ response value. Let's go to R!
@@ -476,7 +475,7 @@ bglm1 <- stan_glm(Better ~ Treatment + Sex + Age,
 
 ```
 
-The default priors are the same as those used when performing multiple regression.
+The default coefficient priors are the same as those used when performing multiple regression. The intercept has location = 0.
 
 ## Interpreting the coefficients
 
@@ -502,7 +501,7 @@ The odds that `Better = 1` about 6 times higher for the Treated group: $\text{ex
 An effect plot can help communicate a model in terms of probability.
 
 ```{r fig.height=5}
-plot(ggpredict(bglm1, terms = "Treatment"))
+ggpredict(bglm1, terms = "Treatment") |> plot()
 ```
 
 Let's go to R!
@@ -526,9 +525,9 @@ $$y = \beta_0 + \beta_2x2$$
   
 In traditional statistics, models are often compared using hypothesis tests or information criteria, such as AIC. 
 
-In Bayesian statistics, the widely applicable information criterion (WAIC) is often used.
+In Bayesian statistics, the Pareto Smoothed Importance-Sampling Leave-One-Out cross-validation (PSIS-LOO) is often used.
 
-It is relatively easy to implement with the `waic` function in the `rstanarm` package.
+It is relatively easy to implement with the `loo` function in the `rstanarm` package.
 
 ## Information criteria
 
@@ -539,22 +538,6 @@ The criteria values by themselves are not meaningful. We compare them across dif
 Is the model with the smallest information criteria the "best" model? Not necessarily. 
 
 Think of comparing them like judging the results of a horserace. Winning by photo-finish doesn't instill much confidence that the winning horse is always better. We're more confident a horse is always better when they win by several seconds. 
-
-## WAIC
-
-The well-known Akaike information criterion (AIC) assumes flat (non-informative priors) and that the posterior is approximately normal.
-
-The widely applicable information criterion (WAIC) accommodates informative priors and makes no assumption about the shape of the posterior. 
-
-Say we have two models, `m1` and `m2`. Using `rstanarm` we can compare as follows:
-  
-```{r eval=FALSE}
-waic1 <- waic(m1)
-waic2 <- waic(m2)
-loo_compare(waic1, waic2)
-# or
-loo_compare(waic(m1), waic(m2))
-```
 
 ## `loo_compare` output
 
@@ -571,9 +554,17 @@ The output reports the difference in expected log predictive density (ELPD) alon
 loo_compare(waic(m1), waic(m2))
 ```
 
-The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. If the difference is positive, then the second model is preferred. 
+The first model listed has the largest ELPD. Each subsequent model is compared to the first model.
 
 The standard error of the difference, `se_diff`, gives us some idea of how much "better" the winning model really is.
+
+## ELPD
+
+The expected log predictive density (ELPD) is basically a scoring rule to assess how well a model predicts new data.
+
+When comparing models, models with higher ELPD are closer to the "true" data generating process.
+
+Remember, "expected" is the key word. These are just estimates. Pay attention to the standard error of the difference (`se_diff`)
 
 ## `loo` versus `waic`
 
@@ -608,6 +599,8 @@ Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression mod
 Vehtari, A., Gelman, A., and Gabry, J. (2017). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. _Statistics and Computing_. 27(5), 1413–1432.
 
 Vehtari, A., Gelman, A., and Hwang, J. (2014) Understanding predictive information criteria for Bayesian models. _Statistics and Computing_. 24(6), 997-106. 
+
+Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. https://vasishth.github.io/bayescogsci/book/
 
 `rstanarm` web site: http://mc-stan.org/rstanarm/
 
