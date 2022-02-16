@@ -527,17 +527,7 @@ In traditional statistics, models are often compared using hypothesis tests or i
 
 In Bayesian statistics, the Pareto Smoothed Importance-Sampling Leave-One-Out cross-validation (PSIS-LOO) is often used.
 
-It is relatively easy to implement with the `loo` function in the `rstanarm` package.
-
-## Information criteria
-
-Information criteria in general provide an approximation of predictive accuracy. (ie, how accurate will our model perform with out-of-sample data?)
-
-The criteria values by themselves are not meaningful. We compare them across different models and prefer smaller values.
-
-Is the model with the smallest information criteria the "best" model? Not necessarily. 
-
-Think of comparing them like judging the results of a horserace. Winning by photo-finish doesn't instill much confidence that the winning horse is always better. We're more confident a horse is always better when they win by several seconds. 
+It is relatively easy to implement with the `loo()` and `loo_compare()` functions in the `rstanarm` package.
 
 ## `loo_compare` output
 
@@ -551,12 +541,12 @@ The output reports the difference in expected log predictive density (ELPD) alon
 
 
 ```{r}
-loo_compare(waic(m1), waic(m2))
+loo_compare(loo(m1), loo(m2))
 ```
 
 The first model listed has the largest ELPD. Each subsequent model is compared to the first model.
 
-The standard error of the difference, `se_diff`, gives us some idea of how much "better" the winning model really is.
+The standard error of the difference, `se_diff`, gives us some idea of how certain that difference is. If `se_diff` is bigger than `elpd_diff`, then we shouldn't be so sure the first model is necessarily "better".
 
 ## ELPD
 
@@ -565,17 +555,6 @@ The expected log predictive density (ELPD) is basically a scoring rule to assess
 When comparing models, models with higher ELPD are closer to the "true" data generating process.
 
 Remember, "expected" is the key word. These are just estimates. Pay attention to the standard error of the difference (`se_diff`)
-
-## `loo` versus `waic`
-
-Vehtari, Gelman, and Gabry (2017) recommend Leave-one-out cross-validation (LOO).   
-\  
-
-> Although WAIC is asymptotically equal to LOO, we demonstrate that PSIS-LOO is more robust in the finite case with weak priors or influential observations.
-
-PSIS stands for Pareto-smoothed importance sampling, which is used in the computation of LOO. 
-
-The `loo_compare` function will advise us when we should consider using LOO instead of WAIC.
 
 Let's go to R!
 

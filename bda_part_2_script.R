@@ -493,68 +493,43 @@ arthritis.blm3 <- stan_glm(Better ~ Treatment * Sex + Treatment * Age,
                             data = arthritis,
                             family = binomial) 
 
-# Let's look at the waic
-waic(arthritis.blm1)
-waic(arthritis.blm2)
-waic(arthritis.blm3)
 
-# elpd_waic = expected log predictive density.
-# p_waic = effective number of parameters. A bias correction used in the
-#          calculation of elpd
-# waic = -2(elpd_waic)
+# compare these models using loo() and loo_compare()
+
+# First we just use loo()
+loo(arthritis.blm1)
+loo(arthritis.blm2)
+loo(arthritis.blm3)
+
+# elpd_loo = expected log predictive density.
+# p_loo = effective number of parameters; aka overfitting penalty
+# looic = LOO information criterion; -2(elpd_loo)
+
+# Notice the warnings. Some observations are considered "outliers" in the data
+# and surprising according to the model. The warning message gives us helpful
+# advice: "We recommend calling 'loo' again with argument 'k_threshold = 0.7'"
+
+loo(arthritis.blm2, k_threshold = 0.7)
+loo(arthritis.blm3, k_threshold = 0.7)
 
 
 # Compare all models using loo_compare. The "best" model is listed first. Each
 # subsequent comparison is to that model.
-loo_compare(waic(arthritis.blm1),
-            waic(arthritis.blm2),
-            waic(arthritis.blm3))
+loo_compare(loo(arthritis.blm1),
+            loo(arthritis.blm2, k_threshold = 0.7),
+            loo(arthritis.blm3, k_threshold = 0.7))
 
-# The difference in ELPD will be negative if the expected out-of-sample
-# predictive accuracy of the first model is higher. If the difference is
-# positive, then the second model is preferred. But check the SE of the diff!
-
-# Now what about those warnings?
-waic.2 <- waic(arthritis.blm2) # 4 estimates greater than 0.4 
-waic.3 <- waic(arthritis.blm3) # 3 estimates greater than 0.4
-
-# see the estimates > 0.4
-head(waic.2$pointwise)
-waic.2$pointwise[waic.2$pointwise[,"p_waic"] > 0.4,]
-
-head(waic.3$pointwise)
-waic.3$pointwise[waic.3$pointwise[,"p_waic"] > 0.4,]
-
-# Side note: p_waic is the sum of the p_waic pointwise estimates
-waic.2
-sum(waic.2$pointwise[,"p_waic"])
-
-# According to Vehtari, A., Gelman, A., and Gabry, J. (2017), "based on our
-# simulation experiments it seems that p_waic is unreliable if any of
-# the terms exceeds 0.4."
+# It appears model 1 may be no different than model 2. Notice the large standard
+# error on the difference. Model 1 appears to be preferable to model 3.
 
 
-# OK, let's try loo instead...
-loo_compare(loo(arthritis.blm1), 
-            loo(arthritis.blm2), 
-            loo(arthritis.blm3))
-
-# How does it differ from loo_compare using waic?
-loo_compare(waic(arthritis.blm1),
-            waic(arthritis.blm2),
-            waic(arthritis.blm3))
-
-# Says McElreath (2016): "The attitude this book encourages is to retain and
-# present all models, no matter how big or small the differences in WAIC (or
-# another criterion)"
 
 # Example code for comparing multiple models with a similar name.
 # - ".blm[0-9]$" is a regular expression that means "ends with .blm and a number"
 # - mget gets multiple objects from the memory by name
-# - lapply waic or loo to the objects
+# - lapply loo to the objects
 # - loo_compare accepts a list of loo objects
 
-loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), waic))
 loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
 
 
@@ -569,11 +544,10 @@ ps_mod5 <- update(ps_mod1, . ~ . - age - illness, data = ps)
 ps_mod6 <- update(ps_mod1, . ~ . - anxiety - illness, data = ps)
 ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
 
-# compare the models using waic and/or loo.
+# compare the models using loo.
 # TIP: Try the lapply/mget code above with the regular expression "^ps_"
 
-
-
+loo_compare(lapply(mget(ls(pattern = "^ps_")), loo))
 
 
 # Appendix - using model to make predictions ------------------------------
@@ -608,11 +582,11 @@ head(pp.arthritis)
 mean(pp.arthritis)
 
 # predicted probability for Male, age 45, on Treatment
-pl.arthritis <- posterior_linpred(arthritis.blm, transform = TRUE,
-                                  newdata = data.frame(Treatment = "Treated", 
-                                                       Sex = "Male", 
-                                                       Age = 45),
-                                  draws = 1000)
+pl.arthritis <- posterior_epred(arthritis.blm,
+                                newdata = data.frame(Treatment = "Treated",
+                                                     Sex = "Male", 
+                                                     Age = 45),
+                                draws = 1000)
 head(pl.arthritis)
 predictive_interval(pl.arthritis)
 
@@ -718,7 +692,6 @@ plot(ggpredict(bm2, terms = c("weight", "svi")))
 plot(loo(bm1), label_points = TRUE)
 plot(loo(bm2), label_points = TRUE)
 
-loo_compare(waic(bm1), waic(bm2))
 loo_compare(loo(bm1), loo(bm2))
 
 loo_compare(loo(bm1, k_threshold = 0.7), 
@@ -738,10 +711,11 @@ pp_check(mod1)
 
 # The dark line is a density estimate of our observed data. We can get this "by
 # hand" as follows:
-plot(density())
+plot(density(ps$ps))
 
 # or using ggplot
-ggplot(ps, aes(x = ps)) + 
+ggplot(ps) +
+  aes(x = ps) +
   geom_density() + 
   theme_gray()
 
@@ -767,3 +741,4 @@ ggplot() +
   theme_gray()
 
 
+## END OF SCRIPT
