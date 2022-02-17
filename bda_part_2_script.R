@@ -48,8 +48,7 @@ plot(lm1, which = 5)
 # Bayesian approach
 # - fit a simple additive model with default priors;
 # - Model patient satisfaction as a weighted sum of age, illness and anxiety;
-# - "family = gaussian" essentially implies we think our dependent variable is
-#   approximately symmetric
+# - "family = gaussian" says we thing the error is normall distributed
 mod1 <- stan_glm(ps ~ age + illness + anxiety, 
                  data = ps, 
                  family = gaussian)
@@ -103,7 +102,7 @@ curve(dexp(x, rate = 0.058),
       xlab = "prior for sigma")
 
 
-# Making these priors explicit in our model code:
+# Making the default priors explicit in our model code:
 mod1 <- stan_glm(ps ~ age + illness + anxiety,
                  data = ps,
                  family = gaussian,
