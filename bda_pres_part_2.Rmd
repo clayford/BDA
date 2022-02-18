@@ -8,7 +8,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, out.width = '90%')
 ```
 
 ## Agenda
@@ -238,7 +238,6 @@ The scale, or spread, of the priors is automatically rescaled to accommodate the
 We proceed the same way as before to evaluate and explore the model.
 
 ```{r eval=FALSE}
-plot(bm, plotfun = "trace")
 plot(bm, plotfun = "dens")
 posterior_interval(bm)
 summary(bm)
@@ -252,13 +251,13 @@ Let's go to R!
 
 In our previous model, we assumed the predictor effects were simply additive. For example, it didn't matter how ill you were, the effect of age was always the same.
 
-$$satisfaction = \beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}$$
 
 But we may have reason to believe the effects of age and illness interact. Perhaps the older you are, the effect of illness on patient satisfaction decreases.
 
 One way to describe this interaction is to add the product of age and illness to the model:
 
-$$satisfaction = \beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness + \beta_4 age \times illness$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}$$
 
 ## Specifying interactions
 
@@ -317,6 +316,8 @@ library(ggeffects)
 ggpredict(bm2, terms = c("age","illness")) |> 
   plot()
 ```
+
+The following plot shows that the interaction between age and illness is small and virtually non-existent.
 
 ## An effect plot for the `age:illness` interaction
 
@@ -405,7 +406,7 @@ This is the form logistic regression takes when performed in R (or any other pro
 
 ## Likelihood
 
-Since we're modeling the probability of an event happening, our response variable has a Bernoulli distribution, or binomial distribution with _n_ = 1:
+Since we're modeling the probability of an event happening, our response variable has a binomial distribution with _n_ = 1:
 
 $$Y \sim B\left(n = 1, p = \frac{1}{1 + \text{exp}(-X\beta)} \right)$$
 
@@ -426,7 +427,7 @@ dplyr::sample_n(arthritis, 6)
 ```
 
 
-$$\text{log} \left( \frac{P(Better = 1)}{1 - P(Better = 1)} \right) = \beta_0 + \beta_1Trt + \beta_2Sex + \beta_3Age$$
+$$\text{log} \left( \frac{P(\text{Better} = 1)}{1 - P(\text{Better} = 1)} \right) = \beta_0 + \beta_1\text{Trt} + \beta_2\text{Sex} + \beta_3\text{Age}$$
 
 
 
@@ -479,58 +480,6 @@ An effect plot can help communicate a model in terms of probability.
 ```{r fig.height=5}
 ggpredict(bglm1, terms = "Treatment") |> plot()
 ```
-
-Let's go to R!
-
-## Model comparison
-
-Let's say we have the following model:
-  
-  $$y = \beta_0 + \beta_1x1 + \beta_2x2$$
-  
-Do we need $x2$? Maybe the following model is just as "good"?
-  
-  $$y = \beta_0 + \beta_1x1$$
-  
-Or maybe a model with just $x2$ is better than a model with just $x1$.
-
-$$y = \beta_0 + \beta_2x2$$
-  
-  
-## Model comparison
-  
-In traditional statistics, models are often compared using hypothesis tests or information criteria, such as AIC. 
-
-In Bayesian statistics, the Pareto Smoothed Importance-Sampling Leave-One-Out cross-validation (PSIS-LOO) is often used.
-
-It is relatively easy to implement with the `loo()` and `loo_compare()` functions in the `rstanarm` package.
-
-## `loo_compare` output
-
-```{r echo=FALSE}
-m1 <- readRDS("rds/m1.rds")
-m2 <- readRDS("rds/m2.rds")
-
-```
-
-The output reports the difference in expected log predictive density (ELPD) along with the standard error of the difference. 
-
-
-```{r}
-loo_compare(loo(m1), loo(m2))
-```
-
-The first model listed has the largest ELPD. Each subsequent model is compared to the first model.
-
-The standard error of the difference, `se_diff`, gives us some idea of how certain that difference is. If `se_diff` is bigger than `elpd_diff`, then we shouldn't be so sure the first model is necessarily "better".
-
-## ELPD
-
-The expected log predictive density (ELPD) is basically a scoring rule to assess how well a model predicts new data.
-
-When comparing models, models with higher ELPD are closer to the "true" data generating process.
-
-Remember, "expected" is the key word. These are just estimates. Pay attention to the standard error of the difference (`se_diff`)
 
 Let's go to R!
 

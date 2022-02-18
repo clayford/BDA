@@ -200,7 +200,7 @@ posterior_interval(mod1) # compare to mod1 that used default priors
 # rental rates, and operating expenses for commercial properties in a large
 # city.
 
-prop <- read.csv("data/properties.csv")
+prop <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/properties.csv")
 summary(prop)
 pairs(prop)
 
@@ -235,18 +235,15 @@ pp_check(pm1)
 
 
 # fit a model with interactions
-# perhaps we hypothesize the effect of illness depends on age;
-# age:illness means "allow age and illness to interact"
-mod3 <- stan_glm(ps ~ age + illness + anxiety + age:illness, 
+# perhaps we hypothesize the effect of anxiety depends on age;
+# anxiety:illness means "allow anxiety and age to interact"
+mod3 <- stan_glm(ps ~ age + illness + anxiety + anxiety:age, 
                  data = ps, 
                  family = gaussian)
 
 
 # model summary
 summary(mod3)
-
-# check convergence
-plot(mod3, plotfun = "trace")
 
 # visualize posterior distributions
 plot(mod3, plotfun = "dens")
@@ -257,33 +254,29 @@ pp_check(mod3)
 # Effect plots
 
 # visualize the interaction; there does not appear to be any interaction
-ggpredict(mod3, terms = c("age", "illness")) |> plot()
+ggpredict(mod3, terms = c("age", "anxiety")) |> plot()
 
 # change the order to change which variable is on the x-axis
-ggpredict(mod3, terms = c("illness", "age")) |> plot() 
+ggpredict(mod3, terms = c("anxiety", "age")) |> plot() 
 
 # Running ggpredict without plot shows the values
-ggpredict(mod3, terms = c("illness", "age"))
+ggpredict(mod3, terms = c("anxiety", "age"))
 
 # visualize the interaction at ages = 30, 40, 50
-ggpredict(mod3, terms = c("illness", "age [30,40,50]")) |> plot() 
-
-# visualize the interaction at illness = 40, 50, 60
-ggpredict(mod3, terms = c("age", "illness [40,50,60]")) |> plot() 
+ggpredict(mod3, terms = c("anxiety", "age [30,40,50]")) |> plot() 
 
 # main effect plots
-ggpredict(mod3, terms = "anxiety") |> plot()
-ggpredict(mod3, terms = "anxiety")
+ggpredict(mod3, terms = "illness") |> plot()
 
-# set age and illness to 50
-ggpredict(mod3, terms = "anxiety", 
+# set age to 50 and anxiety to 2.3
+ggpredict(mod3, terms = "illness", 
           condition = c("age" = 50, 
-                        "illness" = 50)) |>
+                        "anxiety" = 2.3)) |>
   plot()
 
 # The default credibility ribbon is for the mean response; setting ppd = TRUE
 # returns the predicted response.
-ggpredict(mod3, terms = "anxiety", ppd = TRUE) |> plot()
+ggpredict(mod3, terms = "illness", ppd = TRUE) |> plot()
 
 
 
@@ -319,7 +312,6 @@ plot(gm1, plotfun = "dens")
 # (4) create an effect plot to visualize the interaction.
 
 ggpredict(gm1, terms = c("Temp", "Insul")) |> plot()
-ggpredict(gm1, terms = c("Insul", "Temp[3,5,7]")) |> plot()
 
 # back to presentation
 
@@ -335,9 +327,10 @@ arthritis <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/dat
 # Age = age of patient.
 # Better = 0/1 integer indicating better (1) or not (0)
 
-table(arthritis$Better, arthritis$Treatment)
-table(arthritis$Better, arthritis$Sex)
+xtabs(~ Better + Treatment, data = arthritis)
+xtabs(~ Better + Sex, data = arthritis)
 stripchart(Age ~ Better, data = arthritis)
+
 
 # Model Better as a function of Treatment, Sex and Age
 # Need to set family = binomial
@@ -397,89 +390,12 @@ summary(arthritis.blm2, digits = 3)
 
 plot(arthritis.blm2, plotfun = "dens")
 
-# (4) create an effect plot to visualize the interaction. Try the terms in
-# different order to see the different plots they create.
+# (4) create an effect plot to visualize the interaction. 
 
 ggpredict(arthritis.blm2, terms = c("Age [all]", "Treatment")) |> plot()
-ggpredict(arthritis.blm2, terms = c("Treatment", "Age[40,50,60]")) |> plot()
 
 # back to presentation
 
-
-
-# Model comparison --------------------------------------------------------
-
-# Let's fit a few different models for the Arthritis data
-# main effects only
-arthritis.blm1 <- stan_glm(Better ~ Treatment + Sex + Age,
-                           data = arthritis,
-                           family = binomial) 
-
-# all two-way interactions
-arthritis.blm2 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
-                            data = arthritis,
-                            family = binomial) 
-
-# only two-way interactions for Treatment
-arthritis.blm3 <- stan_glm(Better ~ Treatment * Sex + Treatment * Age,
-                            data = arthritis,
-                            family = binomial) 
-
-
-# compare these models using loo() and loo_compare()
-
-# First we just use loo()
-loo(arthritis.blm1)
-loo(arthritis.blm2)
-loo(arthritis.blm3)
-
-# elpd_loo = expected log predictive density.
-# p_loo = effective number of parameters; aka overfitting penalty
-# looic = LOO information criterion; -2(elpd_loo)
-
-# Notice the warnings. Some observations are considered "outliers" in the data
-# and surprising according to the model. The warning message gives us helpful
-# advice: "We recommend calling 'loo' again with argument 'k_threshold = 0.7'"
-
-loo(arthritis.blm2, k_threshold = 0.7)
-loo(arthritis.blm3, k_threshold = 0.7)
-
-
-# Compare all models using loo_compare. The "best" model is listed first. Each
-# subsequent comparison is to that model.
-loo_compare(loo(arthritis.blm1),
-            loo(arthritis.blm2, k_threshold = 0.7),
-            loo(arthritis.blm3, k_threshold = 0.7))
-
-# It appears model 1 may be no different than model 2. Notice the large standard
-# error on the difference. Model 1 appears to be preferable to model 3.
-
-
-
-# Example code for comparing multiple models with a similar name.
-# - ".blm[0-9]$" is a regular expression that means "ends with .blm and a number"
-# - mget gets multiple objects from the memory by name
-# - lapply loo to the objects
-# - loo_compare accepts a list of loo objects
-
-loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
-
-
-# CODE ALONG 4 ------------------------------------------------------------
-
-# Fit the following models using the patient satisfaction data:
-ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
-ps_mod2 <- update(ps_mod1, . ~ . - age, data = ps)
-ps_mod3 <- update(ps_mod1, . ~ . - anxiety, data = ps)
-ps_mod4 <- update(ps_mod1, . ~ . - illness, data = ps)
-ps_mod5 <- update(ps_mod1, . ~ . - age - illness, data = ps)
-ps_mod6 <- update(ps_mod1, . ~ . - anxiety - illness, data = ps)
-ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
-
-# compare the models using loo.
-# TIP: Try the lapply/mget code above with the regular expression "^ps_"
-
-loo_compare(lapply(mget(ls(pattern = "^ps_")), loo))
 
 
 # Appendix - using model to make predictions ------------------------------
@@ -702,5 +618,106 @@ plot(mod1.loo, label_points = TRUE)
 # vignette("loo2-example", package = "loo")
 
 
+# Appendix: Model Comparison ----------------------------------------------
+
+## Model comparison
+
+# In traditional statistics, models are often compared using hypothesis tests or
+# information criteria, such as AIC.
+
+# In Bayesian statistics, the Pareto Smoothed Importance-Sampling Leave-One-Out
+# cross-validation (PSIS-LOO) is often used.
+
+# It is relatively easy to implement with the `loo()` and `loo_compare()`
+# functions in the `rstanarm` package.
+
+# Let's fit a few different models for the Arthritis data
+# main effects only
+arthritis.blm1 <- stan_glm(Better ~ Treatment + Sex + Age,
+                           data = arthritis,
+                           family = binomial) 
+
+# all two-way interactions
+arthritis.blm2 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
+                           data = arthritis,
+                           family = binomial) 
+
+# only two-way interactions for Treatment
+arthritis.blm3 <- stan_glm(Better ~ Treatment * Sex + Treatment * Age,
+                           data = arthritis,
+                           family = binomial) 
+
+
+# compare these models using loo() and loo_compare()
+
+# First we just use loo()
+loo(arthritis.blm1)
+loo(arthritis.blm2)
+loo(arthritis.blm3)
+
+# elpd_loo = expected log predictive density.
+# p_loo = effective number of parameters; aka overfitting penalty
+# looic = LOO information criterion; -2(elpd_loo)
+
+# Notice the warnings. Some observations are considered "outliers" in the data
+# and surprising according to the model. The warning message gives us helpful
+# advice: "We recommend calling 'loo' again with argument 'k_threshold = 0.7'"
+
+loo(arthritis.blm2, k_threshold = 0.7)
+loo(arthritis.blm3, k_threshold = 0.7)
+
+
+# Compare all models using loo_compare. The "best" model is listed first. Each
+# subsequent comparison is to that model.
+
+# The output reports the difference in expected log predictive density (ELPD)
+# along with the standard error of the difference.
+
+# The first model listed has the largest ELPD. Each subsequent model is compared
+# to the first model.
+
+# The standard error of the difference, `se_diff`, gives us some idea of how
+# certain that difference is. If `se_diff` is bigger than `elpd_diff`, then we
+# shouldn't be so sure the first model is necessarily "better".
+
+loo_compare(loo(arthritis.blm1),
+            loo(arthritis.blm2, k_threshold = 0.7),
+            loo(arthritis.blm3, k_threshold = 0.7))
+
+# It appears model 1 may be no different than model 2. Notice the large standard
+# error on the difference. Model 1 appears to be preferable to model 3.
+
+
+# The expected log predictive density (ELPD) is basically a scoring rule to
+# assess how well a model predicts new data.
+
+# When comparing models, models with higher ELPD are closer to the "true" data
+# generating process.
+
+# Remember, "expected" is the key word. These are just estimates. Pay attention
+# to the standard error of the difference (`se_diff`)
+
+
+# Example code for comparing multiple models with a similar name.
+# - ".blm[0-9]$" is a regular expression that means "ends with .blm and a number"
+# - mget gets multiple objects from the memory by name
+# - lapply loo to the objects
+# - loo_compare accepts a list of loo objects
+
+loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
+
+# Fit the following models using the patient satisfaction data:
+ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
+ps_mod2 <- update(ps_mod1, . ~ . - age, data = ps)
+ps_mod3 <- update(ps_mod1, . ~ . - anxiety, data = ps)
+ps_mod4 <- update(ps_mod1, . ~ . - illness, data = ps)
+ps_mod5 <- update(ps_mod1, . ~ . - age - illness, data = ps)
+ps_mod6 <- update(ps_mod1, . ~ . - anxiety - illness, data = ps)
+ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
+
+# compare the models using loo.
+# Use the lapply/mget code above with the regular expression "^ps_"
+
+loo_compare(lapply(mget(ls(pattern = "^ps_")), loo))
 
 ## END OF SCRIPT
