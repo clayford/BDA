@@ -35,7 +35,7 @@ sigma(lm1)
 confint(lm1)
 
 
-# Use model to simulate data and compare to observed data
+# Use model to simulate data and compare to observed data;
 # This looks good
 sim1 <- simulate(lm1, nsim = 50)
 plot(density(ps$ps), ylim = c(0, 0.03))
@@ -398,7 +398,7 @@ ggpredict(arthritis.blm2, terms = c("Age [all]", "Treatment")) |> plot()
 
 
 
-# Appendix - using model to make predictions ------------------------------
+# Appendix: using model to make predictions -------------------------------
 
 # Using posterior_predict
 
@@ -439,8 +439,7 @@ head(pl.arthritis)
 predictive_interval(pl.arthritis)
 
 
-
-# Appendix - quickly visualize all normal priors --------------------------
+# Appendix: quickly visualize all normal priors ---------------------------
 
 # fit a model
 mod1 <- stan_glm(ps ~ age + illness + anxiety, 
@@ -465,7 +464,7 @@ walk2(priors$prior$adjusted_scale,
 
 
 
-# Appendix - bonus analysis -----------------------------------------------
+# Appendix: bonus analysis ------------------------------------------------
 
 
 # prostate cancer data (from Applied Linear Statistical Models, 5th ed)
@@ -618,7 +617,7 @@ plot(mod1.loo, label_points = TRUE)
 # vignette("loo2-example", package = "loo")
 
 
-# Appendix: Model Comparison ----------------------------------------------
+# Appendix: model comparison ----------------------------------------------
 
 ## Model comparison
 
