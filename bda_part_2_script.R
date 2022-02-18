@@ -34,21 +34,19 @@ coef(lm1)
 sigma(lm1)
 confint(lm1)
 
-# Diagnostic checks
-# residuals versus fitted (check for constant variance)
-plot(lm1, which = 1)
 
-# residuals versus leverage (check for outliers/influence)
-plot(lm1, which = 5)
-
-# Both plots look good
+# Use model to simulate data and compare to observed data
+# This looks good
+sim1 <- simulate(lm1, nsim = 50)
+plot(density(ps$ps), ylim = c(0, 0.03))
+for(i in 1:50)lines(density(sim1[[i]]), col = "grey80")
 
 # or glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
 
 # Bayesian approach
 # - fit a simple additive model with default priors;
 # - Model patient satisfaction as a weighted sum of age, illness and anxiety;
-# - "family = gaussian" says we thing the error is normall distributed
+# - "family = gaussian" says we thing the error is normally distributed
 mod1 <- stan_glm(ps ~ age + illness + anxiety, 
                  data = ps, 
                  family = gaussian)
@@ -134,39 +132,6 @@ summary(mod1)
 #   distribution from which we assume the errors are "drawn".
 
 
-# Diagnostics for Bayesian rstanarm models not really automated;
-
-# residuals versus fitted (check for constant variance)
-plot(fitted(mod1), residuals(mod1))
-abline(h = 0, lty = 2)
-
-# check for influential data using loo(); compute approximate leave-one-out
-# (loo) cross-validation
-
-# p_loo = estimated effective number of parameters (should be similar to
-#         specified model); higher than specified model is not good.
-mod1.loo <- loo(mod1)
-mod1.loo
-
-# For model-checking we want "All Pareto k estimates are good (k < 0.5)"
-
-# associated plot; 
-# This looks good.
-plot(mod1.loo, label_points = TRUE)
-
-# "Using the label_points argument will label any k values larger than 0.7 with
-# the index of the corresponding data point. These high values are often the
-# result of model misspecification and frequently correspond to data points that
-# would be considered 'outliers' in the data and surprising according to the
-# model"
-
-# vignette("loo2-example", package = "loo")
-
-
-# check convergence. Did the sampling "settle down" around a specific region?
-# These plots look good.
-plot(mod1, plotfun = "trace")
-
 # visualize posterior distributions. This is the objective of Bayesian modeling.
 plot(mod1, plotfun = "dens")
 plot(mod1, plotfun = "dens", pars = "age")
@@ -207,21 +172,6 @@ mean(mod1_df$illness < 0)
 # the model parameters from the posterior distribution.
 pp_check(mod1)
 
-# The idea of simulating data to check model fit is not unique to Bayesian
-# analysis. We can do the same with our traditional lm() model.
-
-# use simulate() to generate data from our model
-lm.sim <- simulate(lm1, nsim = 40)
-
-# 40 columns of 46 generated data points (patient satisfaction scores)
-dim(lm.sim)
-
-# plot original data
-plot(density(ps$ps), ylim = c(0,0.03))
-
-# add simulated data
-for(i in 1:40)lines(density(lm.sim[[i]]), col = "grey80")
-
 
 # fit a model with custom prior distributions
 # These are probably not good priors!
@@ -246,54 +196,37 @@ posterior_interval(mod1) # compare to mod1 that used default priors
 
 # CODE ALONG 1 ------------------------------------------------------------
 
-# Let's examine the record times in 1984 for 35 Scottish hill races.
-data(hills, package = "MASS")
+# A commercial real estate company evaluates vacancy rates, square footage,
+# rental rates, and operating expenses for commercial properties in a large
+# city.
 
-# dist = distance in miles
-# climb = total height gained during the route, in feet
-# time = record time in minutes
+prop <- read.csv("data/properties.csv")
+summary(prop)
+pairs(prop)
 
-summary(hills)
-pairs(hills[,c("time", "dist", "climb")])
-hist(hills$time)
+# Can we model the rental rate as a function of the other variables?
+# rate = rental rate (in thousands)
+# age = age of property
+# expenses = operating expenses and taxes
+# vacancy = proportion of property vacant
+# sqft = total square footage
 
-# model time as a function of dist and climb
-hills.lm <- lm(time ~ dist + climb, data = hills)
-summary(hills.lm)
-plot(hills.lm, which = 1)
-plot(hills.lm, which = 5)
-# get row numbers for the exercise
-which(rownames(hills) %in% c("Knock Hill", "Bens of Jura", "Lairig Ghru", "Ben Nevis"))
+lm2 <- lm(rate ~ age + expenses + vacancy + sqft, data = prop)
+summary(lm2)
+confint(lm2) |> round(3)
 
+# (1) Fit a Bayesian model using default priors and review the posterior
+# intervals. Name the model "pm1".
 
-# (1) Fit an "equivalent" Bayesian model using default priors and review the
-# model summary. Name the model "hm1".
-
-hm1 <- stan_glm(time ~ dist + climb, data = hills)
-summary(hm1)
+pm1 <- stan_glm(rate ~ age + expenses + vacancy + sqft, data = prop)
+posterior_interval(pm1) |> round(3)
 
 # (2) View the posterior distributions
+plot(pm1, plotfun = "dens")
 
-plot(hm1, plotfun = "dens")
+# (3) Assess model fit with a posterior predictive check. 
+pp_check(pm1)
 
-# (3) Assess model fit with a posterior predictive check. Take a careful look at
-# the x-axis.
-
-pp_check(hm1)
-
-# (4) Assess the constant variance assumption
-
-plot(fitted(hm1), residuals(hm1))
-abline(h = 0, lty = 2)
-
-# (5) use loo() to check model for 'outliers' or influential points; save the
-# result to hm.loo and plot it with label_points = TRUE
-
-hm.loo <- loo(hm1)
-hm.loo
-plot(hm.loo)
-
-hm.loo <- loo(hm1, k_threshold = 0.7)
 
 # Back to presentation
 
@@ -738,6 +671,36 @@ ggplot() +
   geom_density(aes(x = value, group = draw), pp.DF, color = "lightblue") +
   geom_density(aes(x = ps), ps) + 
   theme_gray()
+
+
+
+# Appendix: using loo for model checking ----------------------------------
+
+
+# check for influential data using loo(); compute approximate leave-one-out
+# (loo) cross-validation
+
+# Here we do it for the patient satisfaction model
+
+# p_loo = estimated effective number of parameters (should be similar to
+#         specified model); higher than specified model is not good.
+mod1.loo <- loo(mod1)
+mod1.loo
+
+# For model-checking we want "All Pareto k estimates are good (k < 0.5)"
+
+# associated plot; 
+# This looks good.
+plot(mod1.loo, label_points = TRUE)
+
+# "Using the label_points argument will label any k values larger than 0.7 with
+# the index of the corresponding data point. These high values are often the
+# result of model misspecification and frequently correspond to data points that
+# would be considered 'outliers' in the data and surprising according to the
+# model"
+
+# vignette("loo2-example", package = "loo")
+
 
 
 ## END OF SCRIPT

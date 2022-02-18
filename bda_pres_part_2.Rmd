@@ -21,16 +21,16 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Review: Bayesian statistics
 
-* The objective of a Bayesian analysis is a _posterior distribution_ of our parameter(s) of interest
+* The objective of a Bayesian analysis is a _posterior distribution_ of our parameters of interest
 * To obtain a posterior distribution, we must start with a _prior distribution_ and a _likelihood_
 * Using _Markov chain Monte Carlo (MCMC)_ we sample from the prior and likelihood to estimate the posterior distributions
 * The `rstanarm` package allows us to perform common Bayesian analyses without having to learn Stan
 
 ## Review: Example
 
-Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Take 25 samples of each brand and calculate mean time.
+Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Take 25 samples of each brand and calculate mean time to exhaustion for each brand.
 
-* begin with a _prior_ distribution of how we believe the differences are distributed
+* begin with a _prior_ distribution of how we believe the difference in means might be distributed
 * update the prior distribution using the _likelihood_ of the data we collected to obtain a _posterior_ distribution
 * use the posterior distribution to describe the differences in brands
 
@@ -54,26 +54,20 @@ The probability the difference is between 0.4 and 1.3 is about 0.95.
 ![](img/d_posterior2.jpeg)
 
 
-## Review: Implementation
-
-```{r}
-bat <- read.csv("data/batteries.csv")
-dplyr::sample_n(bat, 6)
-aggregate(y ~ grp, data = bat, mean)
-```
 
 ## Review: Implementation
 
 
 ```{r echo=FALSE, message=FALSE}
 library(rstanarm)
-bm.out <- readRDS("rds/bmod2.Rds")
+bat <- read.csv("data/batteries.csv")
+bmod <- readRDS("rds/bmod2.Rds")
 ```
 
 
 ```{r eval=FALSE}
 library(rstanarm)
-bm.out <- stan_glm(y ~ grp, data = bat, 
+bmod <- stan_glm(y ~ grp, data = bat, 
                    family = gaussian,   
                    prior = normal(0,3))
 ```
@@ -81,23 +75,16 @@ bm.out <- stan_glm(y ~ grp, data = bat,
 Bayesian uncertainty interval estimated from the posterior distribution:
 
 ```{r}
-round(posterior_interval(bm.out, prob = 0.95, 
+round(posterior_interval(bmod, prob = 0.95, 
                          pars = "grp"),2)
 
-```
-
-
-## Review: trace plot
-
-```{r}
-plot(bm.out, plotfun = "trace", pars = "grp")
 ```
 
 
 ## Review: plotting posterior distribution
 
 ```{r}
-plot(bm.out, plotfun = "dens", pars = "grp") 
+plot(bmod, plotfun = "dens", pars = "grp") 
 ```
 
 ## Review: Working with posterior distribution
@@ -107,10 +94,10 @@ Let's say we want to estimate the probability that the difference in battery lif
 - greater than 0 
 - greater than 1 hour
 
-`as.data.frame` creates a data frame of _posterior samples_. 
+`as.data.frame()` creates a data frame of _posterior samples_. 
 
 ```{r}
-post <- as.data.frame(bm.out)
+post <- as.data.frame(bmod)
 mean(post$grp > 0)
 mean(post$grp > 1)
 ```
@@ -120,7 +107,7 @@ mean(post$grp > 1)
 ## Review: graphical posterior predictive checks
 
 ```{r}
-pp_check(bm.out)
+pp_check(bmod)
 ```
 
 
@@ -141,19 +128,19 @@ Multiple regression, or linear modeling, is the idea that the variability of som
 
 Example: patient satisfaction scores at a hospital. Some are high, some are low. Why? Perhaps it has do with their age, anxiety level, and illness severity.
 
-$$satisfaction = \beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}$$
 
 Where the betas represent some _weight_. Hence the term, _weighted sum_. $\beta_0$ is the intercept.
 
 ## Multiple regression
 
-$$satisfaction = \beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}$$
 
 This model says, "if I take age, anxiety level and illness severity, multiply each by some weight, and add them up, I'll get an expected patient satisfaction score."
 
-The calculated value will be off by some amount. We assume this amount, usually denonted $\epsilon$, is a random draw from a Normal distribution with mean 0 and some unknown standard deviation, $\sigma$. This gives us
+The calculated value will be off by some amount. We assume this amount, usually denoted $\epsilon$, is a random draw from a Normal distribution with mean 0 and some unknown standard deviation, $\sigma$. This gives us
 
-$$satisfaction = \beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness + \epsilon$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \epsilon$$
 
 Traditional multiple regression means estimating the betas and $\sigma$.
 
@@ -197,13 +184,13 @@ We propose a prior distribution for the betas and $\sigma$, and update those dis
 
 Recall our model:
 
-$$satisfaction = \beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness + \epsilon$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \epsilon$$
 
 where $\epsilon \sim N(0,\sigma)$
 
 This implies
 
-$$satisfaction \sim N(\beta_0 + \beta_1 age + \beta_2 anxiety + \beta_3 illness, \sigma)$$
+$$\text{satisfaction} \sim N(\beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}, \sigma)$$
 
 This is our _likelihood_: A normal, or Gaussian, distribution.
 
@@ -258,17 +245,6 @@ summary(bm)
 pp_check(bm)
 
 ```
-
-
-## Model checking
-
-In addition, we can investigate the posterior's sensitivity to particular observations using `loo` (approximate leave-one-out cross-validation)
-
-```{r eval=FALSE}
-loo(bm)
-```
-
-We are notified if certain observations exceed a threshold (`pareto_k > 0.7`)
 
 Let's go to R!
 
