@@ -191,7 +191,7 @@ This implies
 
 $$\text{satisfaction} \sim N(\beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}, \sigma)$$
 
-This is our _likelihood_: A normal, or Gaussian, distribution.
+This is our _likelihood_: A normal, or Gaussian, distribution with a _conditional_ mean that changes based on age, anxiety and illness.
 
 Where traditional statistics maximizes likelihood, Bayesian statistics multiplies the likelihood by the prior to get a posterior distribution.
 
@@ -256,7 +256,7 @@ But we may have reason to believe the effects of age and illness interact. Perha
 
 One way to describe this interaction is to add the product of age and illness to the model:
 
-$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}$$
+$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \beta_4 \text{age} \times \text{illness}$$
 
 ## Specifying interactions
 
@@ -473,7 +473,7 @@ coef(bglm1)
 
 Exponentiating the coefficient value returns an odds ratio.
 
-The odds that `Better = 1` about 6 times higher for the Treated group: $\text{exp}(1.74) \approx 5.7$
+The odds that `Better = 1` is about 6 times higher for the Treated group: $\text{exp}(1.74) \approx 5.7$
 
 ## Using effect plots with logistic regression models
 

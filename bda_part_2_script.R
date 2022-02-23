@@ -1,4 +1,4 @@
-# Bayesian Data Analysis, Part 1
+# Bayesian Data Analysis, Part 2
 # Clay Ford
 # UVA Library StatLab
 # Spring 2022
@@ -218,14 +218,14 @@ confint(lm2) |> round(3)
 # (1) Fit a Bayesian model using default priors and review the posterior
 # intervals. Name the model "pm1".
 
-pm1 <- stan_glm(rate ~ age + expenses + vacancy + sqft, data = prop)
-posterior_interval(pm1) |> round(3)
+
 
 # (2) View the posterior distributions
-plot(pm1, plotfun = "dens")
+
+
 
 # (3) Assess model fit with a posterior predictive check. 
-pp_check(pm1)
+
 
 
 # Back to presentation
@@ -299,19 +299,18 @@ ggplot(whiteside) +
 # (1) Fit a Bayesian model that models Gas as a function of Temp, Insul and
 # their interaction. Use the default priors. Name the model gm1.
 
-gm1 <- stan_glm(Gas ~ Temp + Insul + Temp:Insul, data = whiteside)
+
 
 # (2) view the model summary
 
-summary(gm1)
+
 
 # (3) view the posterior distributions
 
-plot(gm1, plotfun = "dens")
+
 
 # (4) create an effect plot to visualize the interaction.
 
-ggpredict(gm1, terms = c("Temp", "Insul")) |> plot()
 
 # back to presentation
 
@@ -378,23 +377,20 @@ ggpredict(arthritis.blm, terms = "Age [all]") |> plot()
 # (1) Re-fit the Bayesian arthritis model with an interaction for Treatment and
 # Age. Name the model "arthritis.blm2".
 
-arthritis.blm2 <- stan_glm(Better ~ Treatment + Sex + Age + Treatment:Age, 
-                           data = arthritis,
-                           family = binomial)
 
 # (2) view the model summary
 
-summary(arthritis.blm2, digits = 3)
+
 
 # (3) view the posterior distributions
 
-plot(arthritis.blm2, plotfun = "dens")
+
 
 # (4) create an effect plot to visualize the interaction. 
 
-ggpredict(arthritis.blm2, terms = c("Age [all]", "Treatment")) |> plot()
 
-# back to presentation
+
+# WE'RE DONE!
 
 
 
