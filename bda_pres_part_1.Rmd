@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Data Analysis, Part 1"
 author: "Clay Ford"
-date: "Spring 2022"
+date: "Spring 2024"
 output: 
     beamer_presentation: 
         fig_caption: false
@@ -52,7 +52,7 @@ Instead of estimating some "true" mean, we instead estimate the _probability dis
 
 ## Example of a prior distribution
 
-Prior to our survey, perhaps we think the average backpack weighs around 18 lbs[^2]. A possible prior distribution might be a $N(18, 5)$.
+Prior to our analysis, perhaps we think the average backpack weighs around 18 lbs[^2]. A possible prior distribution might be a $N(18, 5)$.
 
 ```{r echo=FALSE, fig.height=5}
 curve(dnorm(x, mean = 18, sd = 5), from = 3, to = 33, 

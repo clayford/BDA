@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Data Analysis, Part 2"
 author: "Clay Ford"
-date: "Spring 2022"
+date: "Spring 2024"
 output: 
     beamer_presentation: 
         fig_caption: false

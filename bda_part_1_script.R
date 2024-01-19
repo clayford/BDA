@@ -1,7 +1,7 @@
 # Bayesian Data Analysis, Part 1
 # Clay Ford
 # UVA Library StatLab
-# Spring 2022
+# Spring 2024
 
 
 
@@ -79,14 +79,13 @@ bmod1
 
 # The medians are the medians of the posterior distributions.
 
-# Notice the auxiliary parameter. The Bayesian model returns a posterior
-# distribution for the estimated population standard deviation (aka, residual
-# standard error)
+# Notice the auxiliary parameter, MAD_SD. The Bayesian model returns a posterior
+# distribution for the standard error estimate
 
 # Instead of a confidence interval we calculate a posterior interval using the
 # posterior_interval function. The "(Intercept)" posterior interval refers to
-# the mean of our model. The "sigma" posterior intercal refers to the standard
-# deviation of our model.
+# the mean of our model. The "sigma" posterior interval refers to the standard
+# error of our model.
 posterior_interval(bmod1, prob = 0.95)
 
 # Use plot method with `plotfun = "dens"` to see the posterior distributions
@@ -109,7 +108,7 @@ prior_summary(bmod1)
 # The base R curve() function makes it relatively easy to visualize priors.
 # prior distribution for intercept
 # dnorm() is the normal density function
-curve(dnorm(x,mean = 18, sd = 5), 
+curve(dnorm(x, mean = 18, sd = 5), 
       from = 18 + -3*5,        # mean - 3 SD 
       to = 18 + 3*5)           # mean + 3 SD
 
@@ -402,25 +401,11 @@ for(i in 1:30)lines(density(sim[,i]), col = "grey80")
 pp_check(bmod1)
 
 
-# battery model pposterior predictive check
+# battery model posterior predictive check
 pp_check(bmod4)
 
 # Again the dark line is a density plot of the observed data
 plot(density(bat$y))
-
-# look at first few rows of posterior distribution samples
-as.data.frame(bmod4) |> head()
-
-# Take the first row of values and use those to simulate data.
-parms2 <- as.data.frame(bmod4) |> head(n=1)
-parms2
-
-# The model is y = a + b*grp, where a is the intercept and b is slope, and the "error" is assumed to be normally distributed with mean 0 and sd = sigma
-d2 <- parms2$`(Intercept)` + bat$grp*parms2$grp + 
-  rnorm(50, mean = 0, sd = parms2$sigma)
-
-# and then plot.
-plot(density(d2))
 
 # We can also produce boxplots and histograms
 pp_check(bmod1, plotfun = "hist", nreps = 3)
@@ -708,7 +693,8 @@ runif(5, min = 0, max = 5)
 # R2 conveys prior information about all the parameters. The prior hinges on
 # prior beliefs about the location of R^2, the proportion of variance in the
 # outcome attributable to the predictors.
-bmod_lm <- stan_lm(y ~ grp, data = bat, prior = R2(location = 0.3, what = "mean"))
+bmod_lm <- stan_lm(y ~ grp, data = bat, 
+                   prior = R2(location = 0.3, what = "mean"))
 summary(bmod_lm)
 # use the posterior_interval function to obtain a Bayesian uncertainty interval 
 posterior_interval(bmod_lm, prob = 0.95, pars = "grp")
