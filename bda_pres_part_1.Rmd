@@ -498,11 +498,3 @@ Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression mod
 Betancourt, Michael. (2018) _A Conceptual Introduction to Hamiltonian Monte Carlo_. https://arxiv.org/pdf/1701.02434.pdf
 
 
-## Thanks for coming
-
-* For statistical consulting: statlab@virginia.edu
-
-* Sign up for more workshops or see past workshops:
-http://data.library.virginia.edu/training/
-
-* Register for the Research Data Services newsletter to be notified of new workshops: http://data.library.virginia.edu/newsletters/

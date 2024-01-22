@@ -506,11 +506,4 @@ Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian D
 
 `rstanarm` web site: http://mc-stan.org/rstanarm/
 
-## Thanks for coming
 
-* For statistical consulting: statlab@virginia.edu
-
-* Sign up for more workshops or see past workshops:
-http://data.library.virginia.edu/training/
-
-* Register for the Research Data Services newsletter to be notified of new workshops: http://data.library.virginia.edu/newsletters/

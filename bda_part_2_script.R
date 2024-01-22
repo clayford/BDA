@@ -1,7 +1,7 @@
 # Bayesian Data Analysis, Part 2
 # Clay Ford
 # UVA Library StatLab
-# Spring 2022
+# Spring 2024
 
 library(rstanarm)
 library(ggeffects)
@@ -328,7 +328,7 @@ arthritis <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/dat
 
 xtabs(~ Better + Treatment, data = arthritis)
 xtabs(~ Better + Sex, data = arthritis)
-stripchart(Age ~ Better, data = arthritis)
+stripchart(Age ~ Better, data = arthritis, method = "jitter")
 
 
 # Model Better as a function of Treatment, Sex and Age
@@ -356,7 +356,7 @@ exp(coef(arthritis.blm)[2])
 # of getting better when on Placebo. (holding other variables constant)
 
 # check model fit; these are density curves for a 0/1 variable. Perhaps not too
-# useful.
+# useful for logistic regression models.
 pp_check(arthritis.blm)
 
 # Effect plots
