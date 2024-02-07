@@ -1,0 +1,203 @@
+---
+title: "A Simple MCMC demonstration"
+author: "Clay Ford"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Note: This demo borrows extensively from the following blog post:
+[A simple Metropolis-Hastings MCMC in R]( https://theoreticalecology.wordpress.com/2010/09/17/metropolis-hastings-mcmc-in-r/). The only difference is I simplified the example to estimate a posterior distribution for a proportion instead of a linear model. I've also tried to add a bit more exposition. This is only for educational purposes. MCMC is not necessary to estimate the posterior distribution of a proportion.
+
+## Generate some data
+
+Let's generate some data from a binomial distribution with size = 1 and prob = 0.3. This generates a sequence of zeroes and ones, where ones have a probability of 0.3 occurring.
+
+```{r}
+set.seed(1)
+y <- rbinom(n = 50, size = 1, prob = 0.3)
+y
+```
+
+
+Now pretend we came upon this data naturally through an experiment or
+observation and want to use Bayesian statistics to estimate the probability of
+a 1 occurring. Perhaps we randomly surveyed college students and asked them if
+they had an Apple computer, where 1 = yes and 0 = no. This is our parameter of
+interest: the probability of having an Apple computer.
+
+The Frequentist approach can be carried out using the `prop.test()` function:
+
+```{r}
+prop.test(x = sum(y), n = length(y))
+```
+
+Bayesian inference does not make a point estimate of the parameter, but
+instead estimates the probability distribution of possible values for the
+parameter. This is the posterior distribution.
+
+Now we use Markov Chain Monte Carlo to work "backwards" and estimate a
+posterior probability distribution for the parameter of interest.
+
+
+## The likelihood
+
+First we define the likelihood, which is our model. Notice we're fitting the
+correct model using the `dbinom()` function. We simulated data from a binomial
+dist with `rbinom()`, and now we're modeling the probability of ones using a
+binomial distribution. We estimate the probability of getting a 0 or 1 for
+different parameter values, convert to log, and sum up. This is the log
+likelihood. In frequentist statistics we try to maximize the log likelihood.
+
+```{r}
+likelihood <- function(param){
+  singlelikelihoods <- dbinom(y, size = 1, prob = param, log = TRUE)
+  sumll <- sum(singlelikelihoods)
+  sumll
+  }
+```
+
+Notice the likelihood is much higher for 0.28 than for 0.98.
+
+```{r}
+likelihood(0.28)
+likelihood(0.98)
+```
+
+We can also plot the likelihood for a range of probability values. Below we run parameter values ranging from 0.01 to 0.99 through the function and plot the results versus the parameter values. 
+
+```{r}
+p <- seq(0.01, 0.99, by=.01)
+p_likelihoods = sapply(p, likelihood)
+plot(p, p_likelihoods , type="l", 
+     xlab = "values of parameter p", ylab = "Log likelihood")
+```
+
+Notice the maximum value is at 0.32.
+
+```{r}
+p[which.max(p_likelihoods)]
+```
+
+This is simply the proportion of ones. 
+
+```{r}
+sum(y)/length(y)
+```
+
+
+## The prior distribution
+
+Bayesian inference uses the likelihood to update a prior distribution for the
+parameter. We have to provide the prior distribution. Let's define a prior
+distribution for our parameter of interest. Perhaps prior surveys indicated
+about 0.4 of students use Apple computers. We define our prior as Normal
+distribution with mean 0.4 and standard deviation 0.15. Notice we use `plogis()`
+to ensure the values range from 0 to 1. `plogis()` is the inverse logit,
+which transforms values on (-Inf,Inf) to (0,1).
+
+Here's what the prior distribution looks like:
+
+```{r}
+curve(dnorm(x, mean = 0.4, sd = 0.15), from = 0, to = 1)
+```
+
+We define a prior distribution function which returns the density for a
+proposed parameter using the prior distribution parameters. Notice we also convert to the log scale by setting `log = TRUE`.
+
+```{r}
+prior = function(param){
+  dnorm(param, mean = 0.4, sd = 0.15, log = TRUE)
+  }
+```
+
+## The posterior distribution
+
+Now we create a posterior function that is the sum of the likelihood and
+prior. Why sum? Because the sum of logs is equal to the log of products.
+Summing log transformed values is safer numerically as products of many small
+values can result in values with many, many decimals. Our computers can only
+be so precise.
+
+```{r}
+posterior <- function(param){
+  likelihood(param) + prior(param)
+  }
+```
+
+This is the distribution we'll sample from. Now we're ready to do the MCMC sampling.
+
+## The Metropolis algorithm
+
+To quote [Wikipedia](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm): "the Metropolis–Hastings algorithm is a Markov chain Monte Carlo (MCMC) method for obtaining a sequence of random samples from a probability distribution **from which direct sampling is difficult**." (emphasis mine.)
+
+We define a function to execute the Metropolis algorithm that has two
+arguments: `startvalue` and `iterations`. The `startvalue` is the first sample we draw from the posterior. It primes the pump. The iterations is the number of
+samples we wish to draw. We want to draw a lot of samples, like in the
+thousands.
+
+```{r}
+run_metropolis_MCMC = function(startvalue, iterations){
+  
+  # initiate a vector with iterations + 1 elements
+  chain <- vector(mode = "numeric", length = iterations + 1)
+  
+  # set the starting value
+  chain[1] <- startvalue
+  
+  # begin the MCMC sampling
+  for (i in 1:iterations){
+    
+    # propose a new sample value based on current sample
+    # plogis() is the inverse logit that converts (-Inf,Inf) to(0,1)
+    proposal <- plogis(rnorm(n = 1, mean = chain[i], sd = 1.4))
+    
+    # calculate an acceptance ratio called "probab"
+    probab <- exp(posterior(proposal) - posterior(chain[i]))
+    
+    # draw a random value between 0 and 1;
+    # if value is less than the acceptance ratio, keep the proposed sample
+    if (runif(1) < probab){
+      chain[i+1] <- proposal
+    
+    # otherwise reject the proposed sample and keep previous sample
+    }else{
+      chain[i+1] <- chain[i]
+    }
+    
+    # repeat this process, which amazingly works.
+  }
+  chain
+}
+```
+
+Now run the MCMC sampling for 10,000 iterations with `startvalue` set to 0.5 
+
+```{r}
+startvalue <- 0.5
+chain <- run_metropolis_MCMC(startvalue, 10000)
+```
+
+Let's throw out the first 5000 samples as burn-in and only keep the last 5000 samples.
+
+```{r}
+burnIn <- 5000
+posterior_sample <- chain[-(1:burnIn)]
+```
+
+Now calculate the posterior interval
+
+```{r}
+quantile(posterior_sample, probs = c(0.025, 0.975))
+```
+
+Compare to rstanarm results which uses a more sophisticated sampling algorithm called "Hamiltonian Monte Carlo".
+
+```{r message=FALSE, warning=FALSE}
+library(rstanarm)
+m <- stan_glm(y ~ 1, family = binomial, refresh = 0)
+plogis(posterior_interval(m, prob = 0.95))
+```

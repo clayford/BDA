@@ -1,3 +1,10 @@
+# Bayesian Data Analysis, Part 1
+# Clay Ford
+# UVA Library StatLab
+# Spring 2024
+
+# Code along answers
+
 # CODE ALONG 1 ------------------------------------------------------------
 
 

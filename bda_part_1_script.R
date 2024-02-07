@@ -3,8 +3,6 @@
 # UVA Library StatLab
 # Spring 2024
 
-
-
 # load packages -----------------------------------------------------------
 
 # If you do not have, go to Tools...Install Packages...
@@ -40,9 +38,12 @@ summary(lm1)
 # confidence interval
 confint(lm1)
 
-# We can also use glm for this as well
+# We can also use glm for this as well. 
 glm1 <- glm(backpacks ~ 1, data = dat, family = gaussian)
 summary(glm1)
+
+# The fitted model is a Normal distribution with mean = 16.0500 and variance =
+# 18.75485. sqrt(18.75845) = 4.331
 
 # confidence interval
 confint(glm1)
@@ -606,7 +607,7 @@ ggplot(handfoot, aes(x = footC, y = hand)) +
   geom_abline(mapping = aes(intercept = `(Intercept)`, 
                             slope = footC), 
               data = fit.df[k,], 
-              size = 0.2, alpha = 0.2, color = "skyblue") +
+              linewidth = 0.2, alpha = 0.2, color = "skyblue") +
   geom_abline(intercept = blm2$coefficients[1], 
               slope = blm2$coefficients[2])
   
@@ -656,6 +657,7 @@ pnorm(1) - pnorm(0)
 # qnorm - the point on the x-axis below which a given area lies
 # point below which lies 0.50
 qnorm(0.5)
+qnorm(0.975)
 
 # The Normal distribution has two "parameters" that dictate where the peak of
 # curve is located on the x-axis (mean) and how spread out the curve is
@@ -735,9 +737,9 @@ prior_log <- dnorm(means, mean = 18, sd = 5, log = TRUE)
 
 # Likelihood of data if mean is 2 and sd = 4
 sum(dnorm(x = dat$backpacks, mean = 2, sd = 4, log = TRUE))
-# Probability of data if mean is 10 and sd = 4
+# Likelihood of data if mean is 10 and sd = 4
 sum(dnorm(x = dat$backpacks, mean = 10, sd = 4, log = TRUE))
-# Probability of data if mean is 20 and sd = 4
+# Likelihood of data if mean is 20 and sd = 4
 sum(dnorm(x = dat$backpacks, mean = 20, sd = 4, log = TRUE))
 
 # Notice we set sd = 4. That's actually a second parameter that needs a prior
