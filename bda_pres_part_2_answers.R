@@ -33,6 +33,9 @@ plot(pm1, plotfun = "dens")
 # (3) Assess model fit with a posterior predictive check. 
 pp_check(pm1)
 
+# (4) Plot average residuals versus vacancy.
+pp_check(mod1, plotfun = "error_scatter_avg_vs_x", x = "illness")
+
 
 # CODE ALONG 2 ------------------------------------------------------------
 

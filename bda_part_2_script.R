@@ -25,7 +25,8 @@ ps <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/patie
 # explore data
 summary(ps)
 pairs(ps)
-hist(ps$ps)
+hist(ps$ps, freq = FALSE)
+lines(density(ps$ps))
 
 # The traditional approach
 lm1 <- lm(ps ~ age + illness + anxiety, data = ps)
@@ -39,7 +40,7 @@ confint(lm1)
 # This looks good
 sim1 <- simulate(lm1, nsim = 50)
 plot(density(ps$ps), ylim = c(0, 0.03))
-for(i in 1:50)lines(density(sim1[[i]]), col = "grey80")
+for(i in 1:50)lines(density(sim1[[i]]), col = "powderblue")
 
 # or glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
 
@@ -161,19 +162,7 @@ mean(mod1_df$age > -1.0 & mod1_df$age < -0.5)
 mean(mod1_df$illness < 0)
 
 
-# Is this a good model? Assess model fit with posterior predictive check. The
-# dark line is the observed patient satisfaction data represented as a smooth
-# distribution. The lighter lines are simulated patient satisfaction scores from
-# our model. Our model should generate data that looks similar to our original
-# data. They are generated using posterior_predict(). This looks like a good
-# model!
-
-# Each of the light blue lines is a prediction generated using a single draw of
-# the model parameters from the posterior distribution.
-pp_check(mod1)
-
-
-# fit a model with custom prior distributions
+# fit a model with different prior distributions.
 # These are probably not good priors!
 mod2 <- stan_glm(ps ~ age + illness + anxiety, 
                  data = ps, 
@@ -193,6 +182,77 @@ posterior_interval(mod1) # compare to mod1 that used default priors
 # mod2 is more uncertain about the effect of anxiety
 
 
+# Is this a good model? Assess model fit with posterior predictive check. The
+# dark line is the observed patient satisfaction data represented as a smooth
+# distribution. The lighter lines are simulated patient satisfaction scores from
+# our model. Our model should generate data that looks similar to our original
+# data. They are generated using posterior_predict(). This looks like a good
+# model!
+
+# Each of the light blue lines is a prediction generated using a single draw of
+# the model parameters from the posterior distribution.
+pp_check(mod1)
+
+# Residuals
+
+# Traditional linear modeling uses residuals to assess model fit and perform
+# model diagnostics.
+
+# Residual = observed response - predicted response
+
+# Recall our linear model from above. There is only set of coefficients, which means there is only one set of predicted values and residuals.
+lm1 <- lm(ps ~ age + illness + anxiety, data = ps)
+coef(lm1)
+head(ps$ps)
+head(fitted(lm1))
+
+head(ps$ps) - head(fitted(lm1)) 
+head(residuals(lm1))
+
+# residual versus fitted value plot; helps assess constant sigma (or variance)
+# assumption. Would like to see constant scatter around 0, implying the error is
+# not systematically high or low.
+plot(lm1, which = 1)
+
+# A Bayesian model does not have point estimates for coefficients. A Bayesian model returns a posterior distribution for each coefficient. Since our model is fit via sampling, we have 4000 sets of coefficients.
+mod1
+
+# The posterior_linpred() functions returns 4000 fitted values for each subject
+pred_vals <- posterior_linpred(mod1)
+head(ps$ps)
+pred_vals[1:6,1:6]
+
+# To get something similar to what we did with the traditional linear model, we
+# can use pp_check() with plotfun = "error_scatter_avg". This computes 4000
+# residuals for each subject, takes the average for each subject, and then plots
+# the average versus the observed value
+pp_check(mod1, plotfun = "error_scatter_avg")
+
+# We can plot average residuals versus a predictor using
+# "error_scatter_avg_vs_x"
+pp_check(mod1, plotfun = "error_scatter_avg_vs_x", x = "illness")
+
+# can also plot median and intervals of the sample coefficients with observed
+# values overlaid using "ppc_intervals" and "ppc_ribbon". However these are
+# probably only useful with smaller data sets.
+pp_check(mod1, plotfun = "ppc_intervals", x = 1:nrow(ps))
+pp_check(mod1, plotfun = "ppc_ribbon", x = 1:nrow(ps))
+
+# These plots all look good. 
+
+# Let's add an outlier to our data to see how these plots may be useful in
+# practice.
+tmp <- ps
+tmp[47,] <- tmp[46,]
+tmp$ps[47] <- 230
+mod1a <- stan_glm(ps ~ age + illness + anxiety, 
+                 data = tmp, 
+                 family = gaussian) 
+pp_check(mod1a, plotfun = "error_scatter_avg")
+pp_check(mod1a, plotfun = "ppc_intervals", x = 1:nrow(tmp))
+pp_check(mod1a, plotfun = "ppc_ribbon", x = 1:nrow(tmp))
+pp_check(mod1a)
+rm(tmp, mod1a)
 
 # CODE ALONG 1 ------------------------------------------------------------
 
@@ -228,19 +288,23 @@ confint(lm2) |> round(3)
 
 
 
+# (4) Plot average residuals versus vacancy.
+
+
 # Back to presentation
 
 
 # Multiple regression with interactions -----------------------------------
 
 
-# fit a model with interactions
+# fit a model with interactions using default priors;
 # perhaps we hypothesize the effect of anxiety depends on age;
 # anxiety:illness means "allow anxiety and age to interact"
 mod3 <- stan_glm(ps ~ age + illness + anxiety + anxiety:age, 
                  data = ps, 
                  family = gaussian)
 
+prior_summary(mod3)
 
 # model summary
 summary(mod3)
@@ -274,16 +338,76 @@ ggpredict(mod3, terms = "illness",
                         "anxiety" = 2.3)) |>
   plot()
 
-# The default credibility ribbon is for the mean response; setting ppd = TRUE
-# returns the predicted response.
-ggpredict(mod3, terms = "illness", ppd = TRUE) |> plot()
+# The default credibility ribbon is for the mean response; 
+# setting ppd = TRUE returns the predicted response.
+ggpredict(mod3, terms = "illness", 
+          condition = c("age" = 50, 
+                        "anxiety" = 2.3), ppd = TRUE) |> 
+  plot()
 
+# How does ggpredict() calculate these values? What is it actually predicting?
 
+# Let's predict estimated satisfaction when illness = 50, age = 50, and 
+# anxiety = 2.3
+ggpredict(mod3, terms = "illness[50]", 
+          condition = c("age" = 50, 
+                        "anxiety" = 2.3))
+
+# To get that for a Bayesian model, we make 4000 predictions because we have
+# 4000 samples. The x matrix below contains, the intercept (1), illness (50),
+# age (50), anxiety (2.3), and the interaction for age and anxiety (50 * 2.3).
+# The betas matrix contains the 4000 posterior samples.
+parms <- as.matrix(mod3)
+head(parms)
+x <- matrix(c(1, 50, 50, 2.3, 50*2.3), ncol = 1)
+
+# use matrix algebra to make predictions (all but sigma)
+est <- parms[,-6] %*% x  
+head(est)
+
+# The posterior_linpred() function does this for us
+posterior_linpred(mod3, newdata = data.frame(illness = 50, 
+                                             age = 50, 
+                                             anxiety = 2.3)) |> 
+  head()
+
+# the estimate is the median of the 4000 predictions
+median(est)  
+
+# the CI is the posterior interval
+posterior_interval(est, prob = 0.95) 
+
+# Using ppd = TRUE incorporates random error from sigma, resulting in a wider
+# interval. To replicate the results of ggpredict() we need to set a seed.
+set.seed(1)
+ggpredict(mod3, terms = "illness[50]", 
+          condition = c("age" = 50, 
+                        "anxiety" = 2.3), 
+          ppd = TRUE)
+
+# We repeat the same steps as above but now include random error. 
+set.seed(1)
+est_ppd <- parms[,-6] %*% x + rnorm(n = 4000, mean = 0, sd = parms[,6])
+head(est_ppd)
+
+# The posterior_predict() function does this for us
+set.seed(1)
+posterior_predict(mod3, newdata = data.frame(illness = 50, 
+                                             age = 50, 
+                                             anxiety = 2.3)) |> 
+  head()
+
+# the estimate is the median
+median(est_ppd)
+
+# the CI is the posterior interval
+posterior_interval(est_ppd)
 
 # CODE ALONG 2 ------------------------------------------------------------
 
 # Assess the effect of insulation and temp on gas consumption for heating a
-# home.
+# home. "A data set collected in the 1960s by Mr Derek Whiteside of the UK
+# Building Research Station."
 data(whiteside, package = "MASS")
 
 # Insul = A factor, before or after insulation
@@ -348,16 +472,35 @@ summary(arthritis.blm)
 plot(arthritis.blm, plotfun = "dens")
 
 # coefficients are on the log-odds scale. One interpretation is to pick a point
-# estimate and exponentitate to get an odds ratio
-coef(arthritis.blm)
-exp(coef(arthritis.blm)[2])
+# estimate and exponentiate to get an odds ratio
+coef(arthritis.blm) # median of posterior dist'n
+exp(coef(arthritis.blm)["TreatmentTreated"])
 
 # Odds of getting "better" are about 6 times higher for Treated, versus the odds
 # of getting better when on Placebo. (holding other variables constant)
 
+# get the posterior interval of the odds ratios
+posterior_interval(arthritis.blm) |> exp()
+
+# Odds of getting "better" appear to be at least 2.6 times higher for Treated,
+# versus the odds of getting better when on Placebo. (holding other variables
+# constant)
+
 # check model fit; these are density curves for a 0/1 variable. Perhaps not too
 # useful for logistic regression models.
 pp_check(arthritis.blm)
+
+# An alternative is to use a binned error plot.
+
+# The rstanarm package provides the "error_binned" option to create a binned
+# error plot. The idea is you divide the data into bins based on the their
+# fitted values, and then plot average residual versus average fitted value. If
+# we have a good model, we expect about 95% of the residuals to fall within the
+# error bounds. Use the nreps argument to specify how many plots you want to
+# create. If we specify 9, that means use the first 9 of the 4000 samples to
+# create the plots.
+pp_check(arthritis.blm, plotfun = "error_binned", nreps = 9)
+
 
 # Effect plots
 
@@ -369,6 +512,17 @@ ggpredict(arthritis.blm) |> plot()
 
 # Take advice: "Consider using `terms="Age [all]"` to get smooth plots."
 ggpredict(arthritis.blm, terms = "Age [all]") |> plot()
+
+# Effect plot for treatment
+ggpredict(arthritis.blm, terms = "Treatment") |> plot()
+
+# This plot is for Females, age 57
+ggpredict(arthritis.blm, terms = "Treatment")
+
+# Effect plot for Males, age 57
+ggpredict(arthritis.blm, terms = "Treatment", 
+          condition = c(Sex = "Male")) |> plot()
+
 
 
 # CODE ALONG 3 ------------------------------------------------------------
@@ -392,11 +546,54 @@ ggpredict(arthritis.blm, terms = "Age [all]") |> plot()
 
 # WE'RE DONE!
 
+# Thanks for coming. Email statlab@virginia.edu if you would like to talk more
+# about your research or statistics in general.
+
+# Appendix: pp_check() by hand --------------------------------------------
+
+# Recall the graphical posterior predictive check we can perform with
+# pp_check(). If a model is a good fit then we should be able to use the model
+# to generate data that looks like the data we observed. The light blue lines
+# are the several sets of model-generated data.
+pp_check(mod1)
+
+# Here's one way to replicate pp_check() by hand.
+mod1_df <- as.data.frame(mod1)  
+nreps <- 30  
+i <- sample(4000, nreps) 
+s <- mod1_df[i,]
+mat <- matrix(NA, nrow = nreps, ncol = nrow(ps))
+for(i in 1:nreps){
+  mat[i,] <- s[i, "(Intercept)"] + 
+    s[i,"age"]*ps$age + 
+    s[i, "illness"]*ps$illness + 
+    s[i,"anxiety"]*ps$anxiety + 
+    rnorm(nrow(ps), mean = 0, sd = s[i,"sigma"])
+}
+
+# create the plot
+plot(density(ps$ps), ylim = c(0, 0.03), lwd = 2)
+apply(mat, 1, function(x)lines(density(x), col = "powderblue"))
+
+# the posterior_predict() function makes this easier.
+post_pred <- posterior_predict(mod1, draws = 30)
+plot(density(ps$ps), ylim = c(0, 0.03))
+apply(post_pred, 1, function(x)lines(density(x), col = "powderblue"))
+
+# Can also use ggplot, but need to reshape the data first 
+pp.DF <- tidyr::pivot_longer(as.data.frame(t(post_pred)),
+                             cols = everything(),
+                             names_to = "draw", 
+                             values_to = "value")
+ggplot() + 
+  geom_density(aes(x = value, group = draw), pp.DF, color = "lightblue") +
+  geom_density(aes(x = ps), ps) + 
+  theme_gray()
 
 
 # Appendix: using model to make predictions -------------------------------
 
-# Using posterior_predict
+# Using posterior_predict()
 
 # Drawing from the posterior predictive distribution at interesting values of
 # the predictors lets us see how a manipulation of a predictor affects the
@@ -413,7 +610,6 @@ dim(pp)
 mean(pp)
 summary(pp)
 quantile(pp, probs = c(0.025, 0.975))
-
 
 
 # Predicted response (0/1) for Male, age 45, on Treatment
@@ -457,132 +653,6 @@ walk2(priors$prior$adjusted_scale,
                                  from = -3*y, 
                                  to = 3*y, 
                                  xlab = z))
-
-
-
-# Appendix: bonus analysis ------------------------------------------------
-
-
-# prostate cancer data (from Applied Linear Statistical Models, 5th ed)
-# A study on 97 men with prostate cancer who were due to receive a 
-# radical prostatectomy.
-
-# psa - prostate specific antigen (PSA)
-# volume - cancer volume
-# weight - prostate weight (in grams)
-# age - age of patient
-# bph - benign prostatic hyperplasia amount
-# svi - seminal vesicle invasion (1 = Yes, 0 = No)
-# cap.pen - capsular penetration
-# gleason.score - Gleason score (grade of disease)
-
-# can we model PSA as a linear function of other variables? 
-# Is there a "best" model?
-
-pros <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/prostate.csv")
-str(pros)
-summary(pros)
-pros$svi <- factor(pros$svi, labels = c("No","Yes"))
-summary(pros)
-
-hist(pros$psa)
-pros$log.psa <- log(pros$psa)
-hist(pros$log.psa)
-
-# pairs plot
-pairs(pros[,c("log.psa", "volume", "weight", "age", "bph", "cap.pen")])
-subset(pros, weight > 400) # influential observation?
-boxplot(log.psa ~ svi, data = pros)
-boxplot(log.psa ~ gleason.score, data = pros)
-
-# fit a Bayesian multiple regression model using rstanarm default priors
-bm1 <- stan_glm(log.psa ~ volume + weight + age + bph + 
-                  svi + cap.pen + gleason.score, 
-                data = pros,
-                family = gaussian)
-
-# check the default priors
-prior_summary(bm1)
-priors <- prior_summary(bm1)
-
-# check convergence
-plot(bm1, plotfun = "trace")
-
-# look at posterior distributions for model coefficients
-plot(bm1, plotfun = "dens")
-
-# check model fit
-pp_check(bm1)
-
-# model summary
-summary(bm1)
-
-
-# add interactions
-bm2 <- stan_glm(log.psa ~ volume*svi + weight*svi + age + bph + 
-                  cap.pen + gleason.score, 
-                data = pros,
-                family = gaussian)
-
-summary(bm2)
-pp_check(bm2)
-
-plot(ggpredict(bm2, terms = c("volume", "svi")))
-plot(ggpredict(bm2, terms = c("weight", "svi")))
-
-
-# check for outliers/influential points
-plot(loo(bm1), label_points = TRUE)
-plot(loo(bm2), label_points = TRUE)
-
-loo_compare(loo(bm1), loo(bm2))
-
-loo_compare(loo(bm1, k_threshold = 0.7), 
-            loo(bm2, k_threshold = 0.7))
-
-
-
-# Appendix: pp_check by hand ----------------------------------------------
-
-# pp_check() allows us to assess model fit with a posterior predictive check. In
-# this section we show how to do it by hand using base R graphics and ggplot.
-
-# Here's pp_check for mod1. The dark line is the observed patient satisfaction
-# data represented as a smooth distribution. The lighter lines are simulated
-# patient satisfaction scores from our model. This looks like a good model!
-pp_check(mod1)
-
-# The dark line is a density estimate of our observed data. We can get this "by
-# hand" as follows:
-plot(density(ps$ps))
-
-# or using ggplot
-ggplot(ps) +
-  aes(x = ps) +
-  geom_density() + 
-  theme_gray()
-
-# Use posterior_predict() to simulate predictions from your model. The posterior
-# predictive distribution is the distribution of the outcome implied by the
-# model.
-pp.out <- posterior_predict(mod1, draws = 30)
-
-# 30 draws of 46 observations
-dim(pp.out)
-
-# create our own posterior predictive check
-d <- density(ps$ps)
-plot(d, ylim = c(0, 1.5*max(d$y)), lwd = 2)
-apply(pp.out, 1, function(x)lines(density(x), col = "grey80"))
-
-# or using ggplot
-pp.DF <- tidyr::gather(as.data.frame(t(pp.out)), 
-                       key = draw, value = value)
-ggplot() + 
-  geom_density(aes(x = value, group = draw), pp.DF, color = "lightblue") +
-  geom_density(aes(x = ps), ps) + 
-  theme_gray()
-
 
 
 # Appendix: using loo for model checking ----------------------------------
@@ -714,5 +784,87 @@ ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
 # Use the lapply/mget code above with the regular expression "^ps_"
 
 loo_compare(lapply(mget(ls(pattern = "^ps_")), loo))
+
+# Appendix: bonus analysis ------------------------------------------------
+
+
+# prostate cancer data (from Applied Linear Statistical Models, 5th ed)
+# A study on 97 men with prostate cancer who were due to receive a 
+# radical prostatectomy.
+
+# psa - prostate specific antigen (PSA)
+# volume - cancer volume
+# weight - prostate weight (in grams)
+# age - age of patient
+# bph - benign prostatic hyperplasia amount
+# svi - seminal vesicle invasion (1 = Yes, 0 = No)
+# cap.pen - capsular penetration
+# gleason.score - Gleason score (grade of disease)
+
+# can we model PSA as a linear function of other variables? 
+# Is there a "best" model?
+
+pros <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/prostate.csv")
+str(pros)
+summary(pros)
+pros$svi <- factor(pros$svi, labels = c("No","Yes"))
+summary(pros)
+
+hist(pros$psa)
+pros$log.psa <- log(pros$psa)
+hist(pros$log.psa)
+
+# pairs plot
+pairs(pros[,c("log.psa", "volume", "weight", "age", "bph", "cap.pen")])
+subset(pros, weight > 400) # influential observation?
+boxplot(log.psa ~ svi, data = pros)
+boxplot(log.psa ~ gleason.score, data = pros)
+
+# fit a Bayesian multiple regression model using rstanarm default priors
+bm1 <- stan_glm(log.psa ~ volume + weight + age + bph + 
+                  svi + cap.pen + gleason.score, 
+                data = pros,
+                family = gaussian)
+
+# check the default priors
+prior_summary(bm1)
+priors <- prior_summary(bm1)
+
+# check convergence
+plot(bm1, plotfun = "trace")
+
+# look at posterior distributions for model coefficients
+plot(bm1, plotfun = "dens")
+
+# check model fit
+pp_check(bm1)
+
+# model summary
+summary(bm1)
+
+
+# add interactions
+bm2 <- stan_glm(log.psa ~ volume*svi + weight*svi + age + bph + 
+                  cap.pen + gleason.score, 
+                data = pros,
+                family = gaussian)
+
+summary(bm2)
+pp_check(bm2)
+
+plot(ggpredict(bm2, terms = c("volume", "svi")))
+plot(ggpredict(bm2, terms = c("weight", "svi")))
+
+
+# check for outliers/influential points
+plot(loo(bm1), label_points = TRUE)
+plot(loo(bm2), label_points = TRUE)
+
+loo_compare(loo(bm1), loo(bm2))
+
+loo_compare(loo(bm1, k_threshold = 0.7), 
+            loo(bm2, k_threshold = 0.7))
+
+
 
 ## END OF SCRIPT

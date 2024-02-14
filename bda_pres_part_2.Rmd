@@ -27,32 +27,17 @@ knitr::opts_chunk$set(echo = TRUE, out.width = '90%')
 
 ## Review: Example
 
-Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Take 25 samples of each brand and calculate mean time to exhaustion for each brand.
+Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? 
 
-* begin with a _prior_ distribution of how we believe the difference in means might be distributed
-* update the prior distribution using the _likelihood_ of the data we collected to obtain a _posterior_ distribution
-* use the posterior distribution to describe the differences in brands
+- Take 25 samples of each brand and calculate mean time
+- Calculate difference between means: $0.86$ hours
+- Appears one brand is superior
 
 ## Review: a prior distribution
 
 Perhaps we're not sure which brand is better. A possible prior distribution might look like this, a $N(0,3)$ distribution.
 
 ![](img/d_prior.jpeg)
-
-
-## Review: a posterior distribution
-
-After observing our data we use _Bayes' theorem_ to update our prior distribution to get a posterior distribution.
-
-![](img/d_posterior1.jpeg)
-
-
-## Review: using posterior distribution
-
-The probability the difference is between 0.4 and 1.3 is about 0.95.
-![](img/d_posterior2.jpeg)
-
-
 
 ## Review: Implementation
 
@@ -80,11 +65,14 @@ round(posterior_interval(bmod, prob = 0.95,
 ```
 
 
+
 ## Review: plotting posterior distribution
 
 ```{r}
 plot(bmod, plotfun = "dens", pars = "grp") 
 ```
+
+
 
 ## Review: Working with posterior distribution
 
@@ -229,8 +217,6 @@ bm <- stan_glm(ps ~ age + illness + anxiety,
 
 ```
 
-The scale, or spread, of the priors is automatically rescaled to accommodate the range of the data.
-
 
 ## Evaluating and exploring the model
 
@@ -241,8 +227,17 @@ plot(bm, plotfun = "dens")
 posterior_interval(bm)
 summary(bm)
 pp_check(bm)
-
 ```
+
+## What about residuals?
+
+In traditional statistics residuals are staple in assessing model fit and diagnostics.
+
+Residuals = Observed response - Predicted response
+
+A traditional model has one set of residuals. A Bayesian model fit using `rstanarm` defaults will have 4000 sets of residuals. 
+
+Fortunately the `pp_check()` function provides options for working with Bayesian residuals.
 
 Let's go to R!
 
