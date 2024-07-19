@@ -6,6 +6,7 @@
 library(rstanarm)
 library(ggeffects)
 library(ggplot2)
+library(dplyr)
 
 
 # multiple regression -----------------------------------------------------
