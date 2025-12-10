@@ -706,7 +706,6 @@ prior_summary(bmod_lm)
 
 
 
-
 # Appendix - grid approximation -------------------------------------------
 
 
