@@ -1,8 +1,4 @@
 # Bayesian Data Analysis in R   
-Part 1 - Feb 17, 2022    
-Part 2 - Feb 24, 2022   
-
-## Workshop descriptions
 
 ### Part 1
 
@@ -36,7 +32,7 @@ This is rstanarm version 2.21.1
   options(mc.cores = parallel::detectCores())
 ```
 
-If you do not see that message then the package is not loading properly. In this case make sure you are using the latest versions of R and RStudio. If not, upgrade to the latest versions and try again. I have provided some instructions to help with this: [https://clayford.github.io/r_install/](https://clayford.github.io/r_install/)
+If you do not see that message then the package is not loading properly. In this case make sure you are using the latest versions of R and RStudio. If not, upgrade to the latest versions and try again. I have provided some instructions to help with this: [https://uvastatlab.github.io/install_r/](https://uvastatlab.github.io/install_r/)
 
 If you already have the rstanarm package installed, you may want to see if package updates are available. 
 
