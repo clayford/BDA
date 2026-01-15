@@ -1,7 +1,7 @@
 # Bayesian Data Analysis, Part 1
 # Clay Ford
 # UVA Library StatLab
-# Spring 2024
+# Spring 2026
 
 # load packages -----------------------------------------------------------
 
@@ -17,8 +17,9 @@ library(rstanarm)
 
 # read in data
 dat <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/backpacks.csv")
-summary(dat)
 hist(dat$backpacks)
+summary(dat)
+mean(dat$backpacks)
 
 # How certain is this estimate?
 # traditional approach: calculate confidence interval
@@ -80,7 +81,12 @@ bmod1
 
 # The medians are the medians of the posterior distributions.
 
-# Notice the auxiliary parameter, MAD_SD. The Bayesian model returns a posterior
+# The MAD_SD summarizes the spread of the posterior distribution. MAD = "Median Absolute Deviation". Technically, it's the median of the absolute value of deviations of all points from the median, multiplied by 1.483. Multiplying by 1.483 reproduces the standard deviation in the special case of a normal distribution.
+pd <- as.matrix(bmod1)[,1]
+median(pd)
+median(abs(pd - median(pd))) * 1.483
+
+# Notice the auxiliary parameter. The Bayesian model returns a posterior
 # distribution for the standard error estimate
 
 # Instead of a confidence interval we calculate a posterior interval using the
@@ -162,7 +168,7 @@ lm.out <- lm(y ~ grp, data = bat)
 summary(lm.out)
 
 # Intercept is mean of group 0
-# grp is difference between group 0 and group 1
+# grp is difference between group 1 and group 0
 # Residual standard error (0.8371) is pooled standard deviation 
 
 # CI of slope parameter (ie difference in means between group 0 and group 1)
@@ -480,7 +486,10 @@ summary(bmod1, digits = 3) # use digits argument if you want more numbers
 
 summary(bmod4) # battery experiment
 
-# The mean_PPD is the sample average posterior predictive distribution of the outcome variable. Think of it as the sample average of the curves you see when running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the response variable. If not, something may be wrong.
+# The mean_PPD is the sample average posterior predictive distribution of the
+# outcome variable. Think of it as the sample average of the curves you see when
+# running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the
+# response variable. If not, something may be wrong.
 
 # backpack survey
 # create our own posterior summaries

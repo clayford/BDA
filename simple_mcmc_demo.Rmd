@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Note: This demo borrows extensively from the following blog post:
-[A simple Metropolis-Hastings MCMC in R]( https://theoreticalecology.wordpress.com/2010/09/17/metropolis-hastings-mcmc-in-r/). The only difference is I simplified the example to estimate a posterior distribution for a proportion instead of a linear model. I've also tried to add a bit more exposition. This is only for educational purposes. MCMC is not necessary to estimate the posterior distribution of a proportion.
+[A simple Metropolis-Hastings MCMC in R](https://theoreticalecology.wordpress.com/2010/09/17/metropolis-hastings-mcmc-in-r/). The only difference is I simplified the example to estimate a posterior distribution for a proportion instead of a linear model. I've also tried to add a bit more exposition. This is only for educational purposes. MCMC is not necessary to estimate the posterior distribution of a proportion.
 
 ## Generate some data
 

@@ -6,7 +6,6 @@
 library(rstanarm)
 library(ggeffects)
 library(ggplot2)
-library(dplyr)
 
 
 # multiple regression -----------------------------------------------------
@@ -194,7 +193,8 @@ posterior_interval(mod1) # compare to mod1 that used default priors
 # the model parameters from the posterior distribution.
 pp_check(mod1)
 
-# Residuals
+
+# Residuals ---------------------------------------------------------------
 
 # Traditional linear modeling uses residuals to assess model fit and perform
 # model diagnostics.
@@ -207,7 +207,7 @@ coef(lm1)
 head(ps$ps)
 head(fitted(lm1))
 
-head(ps$ps) - head(fitted(lm1)) 
+head(ps$ps - fitted(lm1))
 head(residuals(lm1))
 
 # residual versus fitted value plot; helps assess constant sigma (or variance)
@@ -218,6 +218,21 @@ plot(lm1, which = 1)
 # A Bayesian model does not have point estimates for coefficients. A Bayesian model returns a posterior distribution for each coefficient. Since our model is fit via sampling, we have 4000 sets of coefficients.
 mod1
 
+# first 6 sets of coefficients
+head(as.matrix(mod1))
+
+# To get a single set of fitted values, we need to 
+
+sims <- as.matrix(mod1)
+pred <- colMeans(sims[,1] + sims[,2:4] %*% t(ps[,2:4]))
+resid <- ps$ps - pred
+
+plot(pred, resid)
+
+# Easier way
+plot(predict(mod1), residuals(mod1))
+
+
 # The posterior_linpred() functions returns 4000 fitted values for each subject
 pred_vals <- posterior_linpred(mod1)
 head(ps$ps)
@@ -227,11 +242,16 @@ pred_vals[1:6,1:6]
 # can use pp_check() with plotfun = "error_scatter_avg". This computes 4000
 # residuals for each subject, takes the average for each subject, and then plots
 # the average versus the observed value
-pp_check(mod1, plotfun = "error_scatter_avg")
+
+yrep <- posterior_predict(mod1, draws = 500)
+bayesplot::ppc_error_scatter_avg(ps$anxiety, yrep = yrep, x = ps$illness)
+
+pp_check(mod1, plotfun = "error_scatter_avg", x = "illness")
+pp_check(mod1, plotfun = "scatter_avg")
 
 # We can plot average residuals versus a predictor using
 # "error_scatter_avg_vs_x"
-pp_check(mod1, plotfun = "error_scatter_avg_vs_x", x = "illness")
+pp_check(mod1, plotfun = "error_scatter_avg", x = "illness")
 
 # can also plot median and intervals of the sample coefficients with observed
 # values overlaid using "ppc_intervals" and "ppc_ribbon". However these are
