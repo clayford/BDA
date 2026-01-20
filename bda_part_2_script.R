@@ -1,7 +1,7 @@
 # Bayesian Data Analysis, Part 2
 # Clay Ford
 # UVA Library StatLab
-# Spring 2024
+# Spring 2026
 
 library(rstanarm)
 library(ggeffects)

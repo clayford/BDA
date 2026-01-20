@@ -127,13 +127,8 @@ plot(blm_cereal, plotfun = "trace")
 # 2) How does MCSE, Rhat and n_eff look?
 summary(blm_cereal)
 
-# 3) Perform two posterior predictive checks: The default and one using 
-#    plotfun = "stat_grouped" as we did above
+# 3) Perform a posterior predictive check
 pp_check(blm_cereal)
-
-pp_check(blm_cereal, plotfun = "stat_grouped", 
-         stat = "mean", 
-         group = "design")
 
 
 

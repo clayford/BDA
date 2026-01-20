@@ -437,7 +437,7 @@ Common summaries include:
 Things to keep in mind:
 
 - We have one posterior distribution for each parameter in our model
-- The posterior distibutions are the result of MCMC sampling; each posterior distribution we obtain is actually a sample
+- The posterior distributions are the result of MCMC sampling; each posterior distribution we obtain is actually a sample
 - The default "sample size" in `rstanarm` is 4000 (4 chains at 2000 iterations each, with first 1000 as a warm-up)
 - The `summary` output in `rstanarm` summarizes these samples from the posterior distributions
 
@@ -506,6 +506,8 @@ Let's return to the R script.
 
 ::: {style="font-size: 60%;"}
 - Betancourt, Michael. (2018) _A Conceptual Introduction to Hamiltonian Monte Carlo_. <https://arxiv.org/pdf/1701.02434.pdf>
+
+- Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. 
 
 - McElreath, M. (2020). _Statistical Rethinking, 2nd Ed_. CRC Press. Boca Raton.
 

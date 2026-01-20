@@ -82,9 +82,16 @@ bmod1
 # The medians are the medians of the posterior distributions.
 
 # The MAD_SD summarizes the spread of the posterior distribution. MAD = "Median Absolute Deviation". Technically, it's the median of the absolute value of deviations of all points from the median, multiplied by 1.483. Multiplying by 1.483 reproduces the standard deviation in the special case of a normal distribution.
-pd <- as.matrix(bmod1)[,1]
-median(pd)
-median(abs(pd - median(pd))) * 1.483
+
+# extract the posterior distributions
+pd <- as.matrix(bmod1)
+head(pd)
+
+# median of the first column: Intercept
+median(pd[,1])
+# MAD of the first column: Intercept
+mad(pd[,1])
+
 
 # Notice the auxiliary parameter. The Bayesian model returns a posterior
 # distribution for the standard error estimate
@@ -157,6 +164,7 @@ curve(dexp(x, rate = 0.23),
 # read in data
 bat <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/batteries.csv")
 aggregate(y ~ grp, data = bat, mean)
+diff(aggregate(y ~ grp, data = bat, mean)$y)
 stripchart(y ~ grp, data = bat, method = "jitter")
 
 # Traditional approach: 95% confidence interval of the difference in means
@@ -257,6 +265,9 @@ prior_summary(bmod4)
 posterior_interval(bmod4, prob = 0.95)
 posterior_interval(bmod4, prob = 0.95, pars = "grp")
 
+# Not too different from what we got with default priors
+posterior_interval(bmod3, prob = 0.95, pars = "grp")
+
 
 
 # CODE ALONG 2 ------------------------------------------------------------
@@ -331,6 +342,7 @@ bmod4_x <- stan_glm(y ~ grp, data = bat, family = gaussian,
                   iter = 100,    # default = 2000
                   warmup = 10)   # default = 1000 (ie, iter/2)
 
+summary(bmod4_x)
 plot(bmod4_x, plotfun = "trace") # all parameters
 plot(bmod4_x, plotfun = "trace", pars = "grp") 
 
@@ -418,15 +430,6 @@ plot(density(bat$y))
 pp_check(bmod1, plotfun = "hist", nreps = 3)
 pp_check(bmod4, plotfun = "boxplot", nreps = 10)
 pp_check(bmod4, plotfun = "hist", nreps = 3)
-
-# Check histograms of means by level of grouping variable
-pp_check(bmod4, plotfun = "stat_grouped", 
-         stat = "mean", 
-         group = "grp")
-
-# Scatterplots of y vs. several individual yrep datasets
-pp_check(bmod4, plotfun = "scatter", nreps = 3)
-pp_check(bmod4, plotfun = "scatter", nreps = 9)
 
 
 # CODE ALONG 3 ------------------------------------------------------------
