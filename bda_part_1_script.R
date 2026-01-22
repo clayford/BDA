@@ -84,22 +84,22 @@ bmod1
 # The MAD_SD summarizes the spread of the posterior distribution. MAD = "Median Absolute Deviation". Technically, it's the median of the absolute value of deviations of all points from the median, multiplied by 1.483. Multiplying by 1.483 reproduces the standard deviation in the special case of a normal distribution.
 
 # extract the posterior distributions
-pd <- as.matrix(bmod1)
+pd <- as.data.frame(bmod1)
 head(pd)
 
 # median of the first column: Intercept
-median(pd[,1])
+median(pd$`(Intercept)`)
 # MAD of the first column: Intercept
-mad(pd[,1])
+mad(pd$`(Intercept)`)
 
 
 # Notice the auxiliary parameter. The Bayesian model returns a posterior
-# distribution for the standard error estimate
+# distribution for the residual standard error (sigma) estimate.
 
 # Instead of a confidence interval we calculate a posterior interval using the
-# posterior_interval function. The "(Intercept)" posterior interval refers to
-# the mean of our model. The "sigma" posterior interval refers to the standard
-# error of our model.
+# posterior_interval() function. The "(Intercept)" posterior interval refers to
+# the mean of our model. The "sigma" posterior interval refers to the residual
+# standard error of our model.
 posterior_interval(bmod1, prob = 0.95)
 
 # Use plot method with `plotfun = "dens"` to see the posterior distributions
@@ -163,7 +163,7 @@ curve(dexp(x, rate = 0.23),
 
 # read in data
 bat <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/batteries.csv")
-aggregate(y ~ grp, data = bat, mean)
+aggregate(y ~ grp, data = bat, FUN = mean)
 diff(aggregate(y ~ grp, data = bat, mean)$y)
 stripchart(y ~ grp, data = bat, method = "jitter")
 
@@ -194,8 +194,8 @@ bmod3
 # distribution for the residual standard error.
 
 # Use plot method to see the posterior distributions
-plot(bmod3, "dens")
-plot(bmod3, "dens", pars = "grp")
+plot(bmod3, plotfun = "dens")
+plot(bmod3, plotfun ="dens", pars = "grp")
 
 # use the posterior_interval function to obtain a Bayesian uncertainty interval 
 posterior_interval(bmod3, prob = 0.95)
@@ -364,7 +364,12 @@ plot(bmod4_x, plotfun = "trace", pars = "grp")
 summary(bmod1)
 summary(bmod4)
 
-# The log-posterior is the logarithm of the posterior. This value is sometimes used for assessing predictive accuracy and for model comparison. 
+# The mean_PPD is the sample average posterior predictive distribution of the
+# outcome variable. Think of it as the sample average of the curves you see when
+# running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the
+# response variable. If not, something may be wrong.
+
+# The log-posterior is the logarithm of the joint posterior. This value is sometimes used for assessing predictive accuracy and for model comparison. 
 
 # Again these all look good.
 
@@ -488,11 +493,6 @@ summary(bmod1) #  backpacks survey
 summary(bmod1, digits = 3) # use digits argument if you want more numbers
 
 summary(bmod4) # battery experiment
-
-# The mean_PPD is the sample average posterior predictive distribution of the
-# outcome variable. Think of it as the sample average of the curves you see when
-# running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the
-# response variable. If not, something may be wrong.
 
 # backpack survey
 # create our own posterior summaries

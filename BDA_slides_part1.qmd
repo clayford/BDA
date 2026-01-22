@@ -30,7 +30,7 @@ knitr:
 
 ## Motivating example
 
-Estimate the mean weight of students' backpacks at UVa.
+Estimate the mean weight of students' backpacks at UVA.
 
 - Take a random sample of 100 students
 - Weigh their backpacks in lbs.
@@ -47,6 +47,8 @@ Assume there is some fixed but unknown mean backpack weight. If we could see all
 - We might say we're 95% confident the true mean is between 15.2 and 16.9
 
 If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. (NOTE: A confidence interval is NOT a probability interval.)
+
+This approach is sometimes called the **Frequentist** approach.
 
 [^1]: We also have to estimate the standard deviation in order to calculate the traditional confidence interval.  
 
@@ -101,13 +103,13 @@ text(x = 16.5, y = 0.7, labels = "P(15.5 < m < 16.5) = 0.74", pos = 4)
 
 ## Another motivating example
 
-Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? 
+Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Is one brand superior?
 
-- Take 25 samples of each brand and calculate mean time
+- Take 25 samples of each brand and calculate mean time until batteries run dead for each brand
 - Calculate difference between means: 0.86 hours
 - Appears one brand is superior
 
-If I do this again, will I get the same result? Or is this due to chance? How certain are we about the 0.86 estimate?
+If I do this again, will I get the same basic result? Or will the result substantially change? How certain are we about the 0.86 estimate?
 
 ## The traditional approach
 
@@ -156,10 +158,10 @@ We use Bayes' theorem to update our prior distribution to get a posterior distri
 
 $$\text{posterior} = \frac{\text{likelihood} \times \text{prior}}{\text{average likelihood}} $$ 
 
-- prior is how we believe a _parameter_ of interest is distributed
-- likelihood is the probability of observed data given a certain parameter, eg. $P(\text{data}|\mu = 17)$
+- prior is how we believe a _parameter_ of interest is distributed, represented by a probability distribution. Eg: $\text{weight} \sim N(18,5)$
+- likelihood is the probability of observed data _given_ a certain parameter, also represented by a probability distribution. Eg: $\text{weight}_i \sim N(\mu, \sigma)$
 - posterior is the updated prior
-- average likelihood ensures the posterior is a distribution with area that sums to 1 (ie, a probability distribution)
+- average likelihood ensures the posterior is a distribution with area that sums to 1
 
 
 ## Using Bayes' theorem in real life
@@ -181,7 +183,7 @@ $$\text{posterior} = \frac{\text{likelihood} \times \text{prior}}{\text{average 
 * `rstanarm` generates Stan code for us, and then uses the `rstan` package to run the model
 
 
-## Traditional statistical approach for backpack data
+## Traditional approach: backpack data
 
 Estimate the mean and calculate a confidence interval using `t.test`
 
@@ -195,18 +197,46 @@ t.test(dat$backpacks)
 ```
 
 
-## Traditional modeling approach for backpack data
+## Traditional approach: backpack data
 
 We can also analyze the backpack data using an intercept-only linear model:
 
 ```{r message=FALSE}
 mod1 <- lm(backpacks ~ 1, data = dat)
-confint(mod1)
 ```
+
+The intercept-only model:
+
+$$\text{height}_i \sim N(\mu, \sigma)$$
+
+Where $\mu$ is the intercept and $\sigma$ is the residual standard error.
 
 _This is an important concept because doing Bayesian statistics requires us to frame our analysis as a model._
 
-## Traditional modeling approach for backpack data
+## Traditional approach: backpack data
+
+```{r}
+summary(mod1)
+```
+
+The intercept-only model estimates a mean of 16.05 and a standard deviation of 4.331.
+
+## Traditional approach: backpack data
+
+We can also extract a confidence interval from the intercept-only model:
+
+```{r}
+confint(mod1)
+```
+
+This matches what we get with the `t.test()` function.
+
+```{r}
+t.test(dat$backpacks)$conf.int
+```
+
+
+## Traditional approach: backpack data
 
 In addition to `lm`, we can use `glm` with `family = gaussian`. GLM = Generalized Linear Model. 
 
@@ -216,9 +246,16 @@ mod1 <- glm(backpacks ~ 1, data = dat,
 confint(mod1)
 ```
 
+Same models as before:
+
+$$\text{height}_i \sim N(\mu, \sigma)$$
+
+"Gaussian" is another name for "normal". Need to specify Gaussian because a GLM can fit many different _families_ of models (eg, Poisson, Binomial, Gamma)
 
 
-## Bayesian modeling approach for backpack data
+## Bayesian approach: backpack data
+
+Using rstanarm, we can perform a Bayesian analysis using code that is almost identical to the analysis performed with `glm()`.
 
 ```{r echo=FALSE, message=FALSE}
 library(rstanarm)
@@ -243,9 +280,9 @@ posterior_interval(bm1, prob = 0.95,
 
 ```
 
-## Traditional statistical approach for battery data
+## Traditional approach: battery data
 
-Calculate a confidence interval using `t.test`
+Calculate a confidence interval using `t.test()`
 
 ```{r cache=TRUE}
 bat <- read.csv("data/batteries.csv")
@@ -253,23 +290,62 @@ t.test(y ~ grp, data = bat)
 ```
 
 
-## Traditional modeling approach for battery data
+## Traditional approach: battery data
 
-Can also analyze the data using a linear model
+Can also analyze the data using a linear model.
 
 ```{r cache=TRUE}
 lm.out <- lm(y ~ grp, data = bat)
 confint(lm.out, parm = "grp")
 ```
 
-Or using `glm`
+The model in this case:
+
+$$\text{battery life}_i \sim N(\mu = \alpha + \beta\text{ grp}, \sigma)$$
+
+where $\alpha$ is mean of group 0, $\beta$ is the difference in means between group 1 and group 0, and $\sigma$ is the pooled standard deviation.
+
+## Traditional approach: battery data
+
+```{r}
+summary(lm.out)
+```
+
+The mean for group 0 is 10.1687 and the difference in means is 0.8636. The pooled standard deviation is 0.8371.
+
+
+## Traditional approach: battery data
+
+We can also extract a confidence interval from this model:
+
+```{r}
+confint(lm.out, parm = "grp")
+```
+
+This basically matches what we get with the `t.test()` function, with a change in sign.
+
+```{r}
+t.test(y ~ grp, data = bat)$conf.int
+```
+
+The linear model estimates group 1 - group 0, while the t-test estimated group 0 - group 1.
+
+The slight differences are due to the `t.test()` function performing Welch's t-test by default, which allows for unequal variances between groups. 
+
+
+## Traditional approach: battery data
+
+Once again we can use `glm()` with `family = gaussian`.
+
 ```{r message=FALSE}
 glm.out <- glm(y ~ grp, data = bat, family = gaussian)
 confint(glm.out, parm = "grp")
 ```
 
 
-## Bayesian modeling approach for battery data
+## Bayesian approach: battery data
+
+Again, we can transition smoothly to a Bayesian analysis using rstanarm. The syntax is practically the same with an argument for the prior.
 
 ```{r echo=FALSE, message=FALSE}
 bm.out <- readRDS("rds/bmod2.Rds")
@@ -349,7 +425,7 @@ We hope to see the chains indistinguishable from one another
 - The $\hat{R}$ statistic compares variation between the chains to the variation within chains
 - If all chains converge to the same region, then $\hat{R}$ should be close to 1
 - If $\hat{R} < 1.1$ we have good, though not infallible, evidence of convergence
-- Each parameter that has a posterior distribution will have a separate $\hat{R}$ statistic
+- Each posterior distribution will have a separate $\hat{R}$ statistic
 - We would like them all less than 1.1
 - Included in the `summary` output of the model in the "MCMC diagnostics" section
 
