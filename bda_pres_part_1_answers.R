@@ -120,17 +120,20 @@ summary(lm_cereal)
 # designs. Call the model "blm_cereal"
 
 blm_cereal <- stan_glm(sales ~ design, data = cereal)
+blm_cereal
 
 # 2) Create a trace plot to assess convergence.
 plot(blm_cereal, plotfun = "trace")
 
-# 2) How does MCSE, Rhat and n_eff look?
+# 3) How does MCSE, Rhat and n_eff look?
 summary(blm_cereal)
 
-# 3) Perform a posterior predictive check
+# 4) Perform two posterior predictive checks: The default and one using 
+#    plotfun = "stat_grouped" as we did above
 pp_check(blm_cereal)
 
-
+pp_check(blm_cereal, plotfun = "stat_grouped", stat = "median", 
+         group = "design")
 
 # CODE ALONG 4 ------------------------------------------------------------
 

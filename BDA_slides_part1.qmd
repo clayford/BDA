@@ -499,8 +499,12 @@ Common summaries include:
 
 - These are the range of possible parameter values stated in terms of probability
 - Example: a 95% posterior interval of (0.4, 1.3) is interpreted to mean that there is 95% probability the parameter is between 0.4 and 1.3
-- 80% posterior intervals are provided by default in the `summary` output in the 10% and 90% columns
-- You can use the `probs` argument to request different intervals. For example, to request a 95% interval for model "m": `summary(m, probs = c(0.025, 0.975))`
+- 80% posterior intervals are provided by default when calling `summary()` on a model object
+- 90% posterior intervals are provided by default when using `posterior_interval()`
+- According to the `posterior_interval()` documentation: "90% intervals are more stable than 95% intervals"
+- You can use the `probs` or `prob` arguments to request different intervals. Say you have a model object named "m" and want 95% intervals:
+    * `summary(m, probs = c(0.025, 0.975))`
+    * `posterior_interval(m, prob = c(0.025, 0.975))`
 
 ## Posterior standard deviations
 
@@ -521,7 +525,7 @@ Things to keep in mind:
 
 We can create our own summaries of the posterior distributions. 
 
-The `as.matrix` and `as.data.frame` functions extract the posterior samples into a matrix and data frame, respectively.
+The `as.matrix()` and `as.data.frame()` functions extract the posterior samples into a matrix and data frame, respectively.
 
 Let's say we want to estimate the probability that the mean backpack weight is greater than 16 lbs. Notice we specify the `(Intercept)` parameter with the `$` operator. That's because there are two parameters to choose from (`Intercept` and `sigma`)
 
@@ -541,7 +545,7 @@ mean(post_samp2$grp > 1)
 
 ## Working directly with posterior distributions
 
-Let's say we want to create 95% credibility intervals for the means of the two brands of batteries. The `Intercept` is the estimated mean of grp 0. The sum of the `Intercept` and `grp` coefficient is the estimated mean of grp 1.
+Let's say we want to create 95% posterior intervals for the means of the two brands of batteries. The `Intercept` is the estimated mean of grp 0. The sum of the `Intercept` and `grp` coefficient is the estimated mean of grp 1.
 
 ```{r}
 quantile(post_samp2$`(Intercept)`, 
@@ -553,15 +557,6 @@ quantile(post_samp2$`(Intercept)` + post_samp2$grp,
 
 
 Let's return to the R script.
-
-
-## Using ShinyStan with `rstanarm` models
-
-- `rstanarm` models can be diagnosed and explored with the ShinyStan web app
-- ShinyStan is powered by the Shiny web application framework by RStudio
-- To use: `launch_shinystan(mod)` where `mod` is your `rstanarm` model
-- The ShinyStan application will open in your default web browser
-- ShinyStan has a GUI that allows you to interactively explore and diagnose your model 
 
 
 ## Some journal articles using `rstanarm`

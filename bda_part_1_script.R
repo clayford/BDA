@@ -369,7 +369,8 @@ summary(bmod4)
 # running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the
 # response variable. If not, something may be wrong.
 
-# The log-posterior is the logarithm of the joint posterior. This value is sometimes used for assessing predictive accuracy and for model comparison. 
+# The log-posterior diagnostic is sometimes useful as a quick catch-all
+# diagnostic for chain mixing.
 
 # Again these all look good.
 
@@ -392,6 +393,7 @@ lines(density(dat$backpacks))
 # Remember, the posterior distributions are comprised of samples. Here are the
 # first six of bmod1. Yours will be different.
 as.data.frame(bmod1) |> head()
+as.data.frame(bmod1) |> nrow()
 
 # Take the first row of values and use those to simulate data.
 parms <- as.data.frame(bmod1) |> head(n=1)
@@ -436,6 +438,11 @@ pp_check(bmod1, plotfun = "hist", nreps = 3)
 pp_check(bmod4, plotfun = "boxplot", nreps = 10)
 pp_check(bmod4, plotfun = "hist", nreps = 3)
 
+# check histograms by level of grouping variable
+pp_check(bmod4, plotfun = "stat_grouped", stat = "median", group = "grp")
+
+# note the message about using the mean
+pp_check(bmod4, plotfun = "stat_grouped", stat = "mean", group = "grp")
 
 # CODE ALONG 3 ------------------------------------------------------------
 
@@ -561,21 +568,8 @@ coef(blm_cereal) # medians of posterior distributions
 # and design 4.
 
 
+# End of workshop!
 
-
-# shinystan ---------------------------------------------------------------
-
-# Launch the ShinyStan web app to interactively explore your Bayesian model.
-
-# Note you cannot use R while ShinyStan is running.
-launch_shinystan(bmod1)
-launch_shinystan(bmod4)
-
-
-# Use launch_shinystan() to explore the Bayesian cereal model.
-
-
-launch_shinystan(blm_cereal)
 
 
 
