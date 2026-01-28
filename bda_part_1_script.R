@@ -537,6 +537,11 @@ quantile(post_samp2$`(Intercept)`,
 quantile(post_samp2$`(Intercept)` + post_samp2$grp, 
          probs = c(0.025, 0.975))
 
+# can also use the emmeans package to work with posterior distributions.
+# Note the intervals are Highest Posterior Density (HPD) intervals.
+library(emmeans)
+emmeans(bmod1, specs = ~1)
+emmeans(bmod4, specs = "grp")
 
 # CODE ALONG 4 ------------------------------------------------------------
 

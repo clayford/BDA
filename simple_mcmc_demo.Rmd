@@ -95,9 +95,7 @@ Bayesian inference uses the likelihood to update a prior distribution for the
 parameter. We have to provide the prior distribution. Let's define a prior
 distribution for our parameter of interest. Perhaps prior surveys indicated
 about 0.4 of students use Apple computers. We define our prior as Normal
-distribution with mean 0.4 and standard deviation 0.15. Notice we use `plogis()`
-to ensure the values range from 0 to 1. `plogis()` is the inverse logit,
-which transforms values on (-Inf,Inf) to (0,1).
+distribution with mean 0.4 and standard deviation 0.15. 
 
 Here's what the prior distribution looks like:
 
@@ -105,14 +103,22 @@ Here's what the prior distribution looks like:
 curve(dnorm(x, mean = 0.4, sd = 0.15), from = 0, to = 1)
 ```
 
-We define a prior distribution function which returns the density for a
-proposed parameter using the prior distribution parameters. Notice we also convert to the log scale by setting `log = TRUE`.
+We define a prior distribution _function_ which returns the density for a
+proposed parameter using the _prior distribution parameters_. Notice we also convert to the log scale by setting `log = TRUE`.
 
 ```{r}
-prior = function(param){
+prior <- function(param){
   dnorm(param, mean = 0.4, sd = 0.15, log = TRUE)
   }
 ```
+
+For example, if the proposed parameter is 0.34...
+
+```{r}
+prior(0.33)
+```
+
+The density for the prior distribution is about 0.87.
 
 ## The posterior distribution
 
@@ -127,6 +133,14 @@ posterior <- function(param){
   likelihood(param) + prior(param)
   }
 ```
+
+For example, if the proposed parameter is 0.33...
+
+```{r}
+posterior(0.33)
+```
+
+The density for the posterior distribution is about -30.5.
 
 This is the distribution we'll sample from. Now we're ready to do the MCMC sampling.
 
@@ -151,9 +165,11 @@ run_metropolis_MCMC = function(startvalue, iterations){
   # begin the MCMC sampling
   for (i in 1:iterations){
     
-    # propose a new sample value based on current sample
-    # plogis() is the inverse logit that converts (-Inf,Inf) to(0,1)
-    proposal <- plogis(rnorm(n = 1, mean = chain[i], sd = 1.4))
+    # propose a new sample value based on current sample;
+    # draw new sample from N(0,2.5) dist'n;
+    # plogis() is the inverse logit that converts (-Inf,Inf) to (0,1);
+    # this ensures we propose a proportion
+    proposal <- plogis(rnorm(n = 1, mean = chain[i], sd = 2.5))
     
     # calculate an acceptance ratio called "probab"
     probab <- exp(posterior(proposal) - posterior(chain[i]))
@@ -188,16 +204,26 @@ burnIn <- 5000
 posterior_sample <- chain[-(1:burnIn)]
 ```
 
-Now calculate the posterior interval
+Now calculate the median and 95% uncertainty interval of the posterior distribution. 
 
 ```{r}
+median(posterior_sample)
 quantile(posterior_sample, probs = c(0.025, 0.975))
 ```
 
-Compare to rstanarm results which uses a more sophisticated sampling algorithm called "Hamiltonian Monte Carlo".
+We can also plot the posterior distribution.
+
+```{r}
+plot(density(posterior_sample))
+```
+
+
+Compare to rstanarm results which uses a more sophisticated sampling algorithm called "Hamiltonian Monte Carlo". Notice the posterior distribution is much smoother despite the fact it's based only on 4000 samples instead of 5000.
 
 ```{r message=FALSE, warning=FALSE}
 library(rstanarm)
 m <- stan_glm(y ~ 1, family = binomial, refresh = 0)
+plogis(coef(m))
 plogis(posterior_interval(m, prob = 0.95))
+plot(density(plogis(as.matrix(m)))) 
 ```

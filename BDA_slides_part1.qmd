@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Data Analysis, Part 1"
 author: "Clay Ford"
-date: "January 2026"
+date: "2026-02-6"
 format: 
   revealjs:
     embed-resources: true
@@ -582,11 +582,11 @@ Let's return to the R script.
 
 - Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. 
 
+- Goodrich B, Gabry J, Ali I & Brilleman S. (2025). rstanarm: Bayesian applied regression modeling via Stan. R package version 2.32.2 <https://mc-stan.org/rstanarm>.
+
 - McElreath, M. (2020). _Statistical Rethinking, 2nd Ed_. CRC Press. Boca Raton.
 
 - Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. _The Quantitative Methods for Psychology_, 14(2), 99-119. doi:10.20982/tqmp.14.2.p099
-
-- `rstanarm` web site: <http://mc-stan.org/rstanarm/>
 
 - Theoretical Ecology. (2010, September 17). Metropolis-Hastings MCMC in R. <https://theoreticalecology.wordpress.com/2010/09/17/metropolis-hastings-mcmc-in-r/>
 :::

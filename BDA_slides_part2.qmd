@@ -1,7 +1,7 @@
 ---
 title: "Bayesian Data Analysis, Part 2"
 author: "Clay Ford"
-date: "January 2026"
+date: "2026-02-13"
 format: 
   revealjs:
     embed-resources: true
@@ -112,7 +112,7 @@ pp_check(bmod)
 
 ## Moving on to more complex analyses
 
-The previous example was a simple _model_ with one predictor. It was essentially the Bayesian approach to what is traditionally analyzed as a t test. 
+The previous example was a simple _model_ with one predictor. It was essentially the Bayesian approach to what is traditionally analyzed as a t-test. 
 
 Today's workshop will cover more complicated analyses including:
 
@@ -139,7 +139,7 @@ This model says, "if I take age, anxiety level and illness severity, multiply ea
 
 The calculated value will be off by some amount. We assume this amount, usually denoted $\epsilon$, is a random draw from a Normal distribution with mean 0 and some unknown standard deviation, $\sigma$. This gives us
 
-$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \epsilon$$
+$$\text{satisfaction}_i = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \epsilon$$
 
 Traditional multiple regression means estimating the betas and $\sigma$.
 
@@ -183,13 +183,13 @@ We propose a prior distribution for the betas and $\sigma$, and update those dis
 
 Recall our model:
 
-$$\text{satisfaction} = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \epsilon$$
+$$\text{satisfaction}_i = \beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness} + \epsilon$$
 
 where $\epsilon \sim N(0,\sigma)$
 
 This implies
 
-$$\text{satisfaction} \sim N(\beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}, \sigma)$$
+$$\text{satisfaction}_i \sim N(\beta_0 + \beta_1 \text{age} + \beta_2 \text{anxiety} + \beta_3 \text{illness}, \sigma)$$
 
 This is our _likelihood_: A normal, or Gaussian, distribution with a _conditional_ mean that changes based on age, anxiety and illness.
 
@@ -217,13 +217,13 @@ Instead of point estimates for the betas and $\sigma$, we get posterior distribu
 
 ## Using `stan_glm` with explicit priors
 
-Use the `prior` arguments to specify priors. Below are the default priors. The `normal` and `exponential` functions are from `rstanarm`.
+Use the `prior` arguments to specify priors. Below are the default priors. The `normal()` and `exponential()` functions are from `rstanarm`.
 
 ```{r eval=FALSE}
 bm <- stan_glm(ps ~ age + illness + anxiety, 
                data = ps,
                family = gaussian,
-               prior_intercept = normal(mean(ps$ps),10),
+               prior_intercept = normal(mean(ps$ps),2.5),
                prior = normal(c(0,0,0),c(2.5,2.5,2.5)),
                prior_aux = exponential(1))
 
@@ -240,16 +240,6 @@ posterior_interval(bm)
 summary(bm)
 pp_check(bm)
 ```
-
-## What about residuals?
-
-In traditional statistics residuals are a staple in assessing model fit and diagnostics.
-
-Residuals = Observed response - Predicted response
-
-A traditional model has one set of residuals. A Bayesian model fit using `rstanarm` defaults will have 4000 sets of residuals. 
-
-Fortunately the `pp_check()` function provides options for working with Bayesian residuals.
 
 Let's go to R!
 
@@ -279,6 +269,12 @@ bm2 <- stan_glm(ps ~ age + illness + anxiety +
 
 Or use the asterisk as a shortcut: `age * illness` = `age + illness + age:illness`
 
+```{r eval=FALSE}
+bm2 <- stan_glm(ps ~ age * illness + anxiety, 
+               data = ps,
+               family = gaussian)
+```
+
 ## The modeling result
 
 ```{r echo=FALSE}
@@ -293,19 +289,41 @@ posterior_interval(bm2)
 
 The interaction appears to be small and we're uncertain whether it's positive or negative. 
 
-## The modeling result
+## Another example
 
-The `coef` function returns the medians of the posterior distributions of the coefficients.[^2]
+The carData package contains data on the prestige of Canadian occupations from the early 1970s. "Prestige" is measured on a scale from 0 - 100, where higher values mean higher prestige.
 
-```{r}
-as.matrix(coef(bm2))
+We attempt to understand the variability of prestige by modeling it as a function of income, type of occupation (bc, wc, prof), and years of education using a Normal likelihood:
+
+$$\text{prestige}_i \sim N(\beta_0 + \beta_1 \text{education} + \beta_2 \text{income} + \beta_3 \text{type} + \beta_4 \text{income} \times \text{type}, \sigma)$$
+
+Note the interaction: this says the effect of income on prestige depends on type of occupation (and vice versa).
+
+## Fitting the model
+
+Fit the model using `stan_glm()` with default priors.
+
+```{r echo=FALSE}
+bm3 <- readRDS("rds/prestige_bm3.rds")
 ```
 
-[^2]: Using `as.matrix` to force the coefficients into a column so they will fit on the slide. 
+```{r eval=FALSE}
+library(carData)
+bm3 <- stan_glm(prestige ~ education + income + type + income:type, 
+                data = Prestige, 
+                family = gaussian)
+```
+
+The interactions seems negative but small.
+
+```{r}
+posterior_interval(bm3)
+```
+
 
 ## Visualizing interactions
 
-Even if we had good evidence that the coefficient for an interaction was large and in a certain direction (positive or negative), the coefficient can be hard to interpret.
+Interaction coefficients are hard to interpret.
 
 To aid in interpretation we can use _effect plots_ to help us visualize our models.
 
@@ -325,43 +343,41 @@ ggpredict(bm2, terms = c("age","illness")) |>
 
 The following plot shows that the interaction between age and illness is small and virtually non-existent.
 
-## An effect plot for the `age:illness` interaction
+## An effect plot for `age:illness`
 
-```{r message=FALSE, echo=FALSE}
+```{r message=FALSE}
 library(ggeffects)
 ggpredict(bm2, terms = c("age","illness")) |> 
   plot()
 ```
 
 
+## An effect plot for `income:type`
+
+```{r}
+ggpredict(bm3, terms = c("income","type")) |> 
+  plot()
+```
+
+
+
 ## Customizing the effect plot
 
-By default ggpredict will pick some values for the 2nd term. We can specify values if we like as follows:
+We can specify predictor values as follows:
 
-```{r eval=FALSE}
+```{r}
 ggpredict(bm2, terms = c("age","illness[45,50,55]")) |>
   plot()
 ```
 
-If we want illness on the x-axis:
+## Customizing the effect plot
 
-```{r eval=FALSE}
-ggpredict(bm2, terms = c("illness","age[30,40,50]")) |>
+We can also specify a range of values:
+
+```{r}
+ggpredict(bm3, terms = c("income[700:10000 by=100]","type")) |> 
   plot()
 ```
-
-## An effect plot for the `age:illness` interaction
-
-```{r message=FALSE}
-ggpredict(bm2, terms = c("illness","age[30,40,50]")) |>
-  plot()
-```
-
-## Interpreting interactions in effect plots
-
-On the previous slide, the effect of illness on patient satisfaction appeared to be the same regardless of age. The plotted lines were approximately parallel. This indicates a small or negligible interaction. 
-
-If the plotted lines had vastly different trajectories such that they crossed or grew further apart, then we would have evidence of an interaction. 
 
 
 ## Effect plots for main effects
@@ -372,17 +388,7 @@ Effect plots are useful for main effects as well (ie, predictors not involved in
 ggpredict(bm2, terms = "anxiety") |> plot()
 ```
 
-The 95% credibility ribbon is for the _mean_ response value.
-
-## Effect plots for main effects
-
-Set `ppd = TRUE` to get a prediction interval.
-
-```{r fig.height=5}
-ggpredict(bm2, terms = "anxiety", ppd = TRUE) |> plot()
-```
-
-The 95% credibility ribbon is for the _predicted_ response value. Let's go to R!
+The 95% credibility ribbon is for the _mean_ response value. Let's go to R!
 
 
 ## Logistic regression
@@ -447,7 +453,7 @@ $$\text{log} \left( \frac{P(\text{Better} = 1)}{1 - P(\text{Better} = 1)} \right
 The traditional method uses `glm`. Notice we set `family = binomial` since our response is binary.
 
 ```{r eval=FALSE}
-glm1 <- glm(Better ~ Treatmnt + Sex + Age, 
+glm1 <- glm(Better ~ Treatment + Sex + Age, 
             data = arthritis,
             family = binomial)
 ```
@@ -492,17 +498,102 @@ ggpredict(bglm1, terms = "Treatment") |> plot()
 
 Let's go to R!
 
+## Model comparison
+
+Let's say we have the following model:
+  
+  $$y = \beta_0 + \beta_1x1 + \beta_2x2$$
+  
+Do we need $x2$? Maybe the following model is just as "good"?
+  
+  $$y = \beta_0 + \beta_1x1$$
+  
+Or maybe a model with just $x2$ is better than a model with just $x1$.
+
+$$y = \beta_0 + \beta_2x2$$
+  
+  
+## Model comparison
+  
+In traditional statistics, models are often compared using hypothesis tests or information criteria, such as AIC. 
+
+In Bayesian statistics, the widely applicable information criterion (WAIC) is often used.
+
+It is relatively easy to implement with the `waic` function in the `rstanarm` package.
+
+## Information criteria
+
+Information criteria in general provide an approximation of predictive accuracy. (ie, how accurate will our model perform with out-of-sample data?)
+
+The criteria values by themselves are not meaningful. We compare them across different models and prefer smaller values.
+
+Is the model with the smallest information criteria the "best" model? Not necessarily. 
+
+Think of comparing them like judging the results of a horserace. Winning by photo-finish doesn't instill much confidence that the winning horse is always better. We're more confident a horse is always better when they win by several seconds. 
+
+## WAIC
+
+The well-known Akaike information criterion (AIC) assumes flat (non-informative priors) and that the posterior is approximately normal.
+
+The widely applicable information criterion (WAIC) accommodates informative priors and makes no assumption about the shape of the posterior. 
+
+Say we have two models, `m1` and `m2`. Using `rstanarm` we can compare as follows:
+  
+```{r eval=FALSE}
+waic1 <- waic(m1)
+waic2 <- waic(m2)
+loo_compare(waic1, waic2)
+# or
+loo_compare(waic(m1), waic(m2))
+```
+
+## `loo_compare` output
+
+```{r echo=FALSE}
+m1 <- readRDS("rds/m1.rds")
+m2 <- readRDS("rds/m2.rds")
+
+```
+
+The output reports the difference in expected log predictive density (ELPD) along with the standard error of the difference. 
+
+
+```{r}
+loo_compare(waic(m1), waic(m2))
+```
+
+The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. If the difference is positive, then the second model is preferred. 
+
+The standard error of the difference, `se_diff`, gives us some idea of how much "better" the winning model really is.
+
+## `loo` versus `waic`
+
+McElreath (2016) recommends using WAIC for model selection. Vehtari, Gelman, and Gabry (2017) recommend Leave-one-out cross-validation (LOO).   
+\  
+
+> Although WAIC is asymptotically equal to LOO, we demonstrate that PSIS-LOO is more robust in the finite case with weak priors or influential observations.
+
+PSIS stands for Pareto-smoothed importance sampling, which is used in the computation of LOO. 
+
+The `loo_compare` function will advise us when we should consider using LOO instead of WAIC.
+
+Let's go to R!
+
+
+
 ## Some journal articles using `rstanarm`
 
 ::: {style="font-size: 60%;"}
 
-Espe, M. et al. (2016) Yield gap analysis of US rice production systems shows opportunities for improvement. _Field Crops Research_, 196:276-283. 
+- Espe, M. et al. (2016) Yield gap analysis of US rice production systems shows opportunities for improvement. _Field Crops Research_, 196:276-283. 
 
-Kubrak, O. et al. (2017) Adaptation to fluctuating environments in a selection experiment with Drosophila melanogaster. _Ecology and Evolution_, 7:3796-3807.
+- Kubrak, O. et al. (2017) Adaptation to fluctuating environments in a selection experiment with Drosophila melanogaster. _Ecology and Evolution_, 7:3796-3807.
 
-Herzog, S. et al. (2017) Sun Protection Factor Communication of Sunscreen Effectiveness. _JAMA Dermatology_, 153(3):348-350.
+- Herzog, S. et al. (2017) Sun Protection Factor Communication of Sunscreen Effectiveness. _JAMA Dermatology_, 153(3):348-350.
 
-Kovic, M. and Hänsli, N. (2017) The impact of political cleavages, religiosity, and values on attitudes towards nonprofit organizations. _Social Sciences_, 7(1), 2.
+- Kovic, M. and Hänsli, N. (2017) The impact of political cleavages, religiosity, and values on attitudes towards nonprofit organizations. _Social Sciences_, 7(1), 2.
+
+- Schnase, J. L., Carroll, M. L., Montesano, P. M., & Seamster, V. A. (2025, September 1). Shifts in breeding phenology for Cassin's Sparrow (Peucaea cassinii) over four decades. _Journal of Field Ornithology_, 96(3), 1 - 11. Retrieved from <https://doi.org/10.5751/JFO-00691-960303>.
 
 :::
 
@@ -510,13 +601,15 @@ Kovic, M. and Hänsli, N. (2017) The impact of political cleavages, religiosity,
 
 ::: {style="font-size: 60%;"}
 
-McElreath, M. (2016). _Statistical Rethinking_. CRC Press. Boca Raton.
+- Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. 
 
-Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. _The Quantitative Methods for Psychology_, 14(2), 99-119.
+- Goodrich B, Gabry J, Ali I & Brilleman S. (2025). rstanarm: Bayesian applied regression modeling via Stan. R package version 2.32.2 <https://mc-stan.org/rstanarm>.
 
-Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. https://vasishth.github.io/bayescogsci/book/
+- McElreath, M. (2016). _Statistical Rethinking_. CRC Press. Boca Raton.
 
-`rstanarm` web site: http://mc-stan.org/rstanarm/
+- Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. _The Quantitative Methods for Psychology_, 14(2), 99-119.
+
+- Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. https://vasishth.github.io/bayescogsci/book/
 
 :::
 

@@ -6,7 +6,7 @@
 library(rstanarm)
 library(ggeffects)
 library(ggplot2)
-
+library(carData)
 
 # multiple regression -----------------------------------------------------
 
@@ -30,24 +30,38 @@ lines(density(ps$ps))
 
 # The traditional approach
 lm1 <- lm(ps ~ age + illness + anxiety, data = ps)
+# or glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
+
 summary(lm1)
 coef(lm1)
 sigma(lm1)
 confint(lm1)
 
+# Is the model "good"? If so, it should simulate data similar to the data we
+# observed.
 
-# Use model to simulate data and compare to observed data;
+# simulate a single set of patient satisfaction score using model coefficients.
+y <- rnorm(n = nrow(ps), 
+           mean = 158.491 + -1.142*ps$age + -0.443*ps$illness + 
+             -13.47*ps$anxiety,
+           sd = 10.058)
+
+# how does simulated data compare to observed data?
+plot(density(ps$ps), ylim = c(0, 0.03))
+lines(density(y), col = "blue")
+
+# use the simulate() function to make this easier. Do it 50 times.
 # This looks good
 sim1 <- simulate(lm1, nsim = 50)
 plot(density(ps$ps), ylim = c(0, 0.03))
 for(i in 1:50)lines(density(sim1[[i]]), col = "powderblue")
 
-# or glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
 
 # Bayesian approach
 # - fit a simple additive model with default priors;
 # - Model patient satisfaction as a weighted sum of age, illness and anxiety;
-# - "family = gaussian" says we thing the error is normally distributed
+# - "family = gaussian" says we think the dependent variable is conditionally 
+#    normally distributed.
 mod1 <- stan_glm(ps ~ age + illness + anxiety, 
                  data = ps, 
                  family = gaussian)
@@ -113,18 +127,38 @@ mod1 <- stan_glm(ps ~ age + illness + anxiety,
 # model summary; summary statistics of the posterior distributions;
 # We want all Rhat < 1.1 (assessment of convergence)
 # We want all n_eff > 1000 (n_eff = effective sample size)
+
 summary(mod1)
 
-# Some naive interpretation, judging by means of the distributions:
+# The mean_PPD is the sample average posterior predictive distribution of the
+# outcome variable. Think of it as the sample average of the curves you see when
+# running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the
+# response variable. If not, something may be wrong.
+
+# Is this a good model? Assess model fit with posterior predictive check. 
+pp_check(mod1)
+
+# The dark line is the observed patient satisfaction data represented as a
+# smooth distribution. The lighter lines are simulated patient satisfaction
+# scores from our model. Our model should generate data that looks similar to
+# our original data. They are generated using posterior_predict(). This looks
+# like a good model!
+
+# Each of the light blue lines is a prediction generated using a single draw of
+# the model parameters from the posterior distribution.
+
+
+# Some naive interpretation, judging by medians of the distributions:
+coef(mod1)
 
 # - for every one year increase in age, expected patient satisfaction decreases
-#   by about 1
+#   by about 1 (all else held constant)
 
 # - for every one unit increase in the illness measure, expected patient
-#   satisfaction decreases by about 0.4
+#   satisfaction decreases by about 0.5 (all else held constant)
 
 # - for every one unit increase in the anxiety score, expected patient
-#   satisfaction decreases by about 13
+#   satisfaction decreases by about 13 (all else held constant)
 
 # - the intercept is the expected patient satisfaction for someone age 0, with
 #   illness = 0 and anxiety = 0. Not useful.
@@ -132,17 +166,16 @@ summary(mod1)
 # - sigma is the estimate of the standard deviation of the normal (gaussian)
 #   distribution from which we assume the errors are "drawn".
 
-
-# visualize posterior distributions. This is the objective of Bayesian modeling.
-plot(mod1, plotfun = "dens")
-plot(mod1, plotfun = "dens", pars = "age")
-plot(mod1, plotfun = "dens", pars = c("age", "illness", "anxiety"))
-
 # 90% credibility intervals of coefficients
 posterior_interval(mod1)
 
 # 95% credibility intervals of coefficients
 posterior_interval(mod1, prob = 0.95)
+
+# visualize posterior distributions. This is the objective of Bayesian modeling.
+plot(mod1, plotfun = "dens")
+plot(mod1, plotfun = "dens", pars = "age")
+plot(mod1, plotfun = "dens", pars = c("age", "illness", "anxiety"))
 
 # The model summary is summarizing 4000 samples; use the as.data.frame()
 # function to create an object that contains the samples.
@@ -152,8 +185,8 @@ dim(mod1_df)
 
 # We can work with this object to make estimates such as...
 
-# what is the probability the effect of anxiety is greater than 0
-mean(mod1_df$anxiety > 0)
+# what is the probability the effect of anxiety is less than 0
+mean(mod1_df$anxiety < 0)
 
 # what is the probability the effect of age is between -1.0 and -0.5
 mean(mod1_df$age > -1.0 & mod1_df$age < -0.5)
@@ -181,99 +214,10 @@ posterior_interval(mod1) # compare to mod1 that used default priors
 
 # mod2 is more uncertain about the effect of anxiety
 
-
-# Is this a good model? Assess model fit with posterior predictive check. The
-# dark line is the observed patient satisfaction data represented as a smooth
-# distribution. The lighter lines are simulated patient satisfaction scores from
-# our model. Our model should generate data that looks similar to our original
-# data. They are generated using posterior_predict(). This looks like a good
-# model!
-
-# Each of the light blue lines is a prediction generated using a single draw of
-# the model parameters from the posterior distribution.
-pp_check(mod1)
+# is it a "good" model?
+pp_check(mod2)
 
 
-# Residuals ---------------------------------------------------------------
-
-# Traditional linear modeling uses residuals to assess model fit and perform
-# model diagnostics.
-
-# Residual = observed response - predicted response
-
-# Recall our linear model from above. There is only set of coefficients, which means there is only one set of predicted values and residuals.
-lm1 <- lm(ps ~ age + illness + anxiety, data = ps)
-coef(lm1)
-head(ps$ps)
-head(fitted(lm1))
-
-head(ps$ps - fitted(lm1))
-head(residuals(lm1))
-
-# residual versus fitted value plot; helps assess constant sigma (or variance)
-# assumption. Would like to see constant scatter around 0, implying the error is
-# not systematically high or low.
-plot(lm1, which = 1)
-
-# A Bayesian model does not have point estimates for coefficients. A Bayesian model returns a posterior distribution for each coefficient. Since our model is fit via sampling, we have 4000 sets of coefficients.
-mod1
-
-# first 6 sets of coefficients
-head(as.matrix(mod1))
-
-# To get a single set of fitted values, we need to 
-
-sims <- as.matrix(mod1)
-pred <- colMeans(sims[,1] + sims[,2:4] %*% t(ps[,2:4]))
-resid <- ps$ps - pred
-
-plot(pred, resid)
-
-# Easier way
-plot(predict(mod1), residuals(mod1))
-
-
-# The posterior_linpred() functions returns 4000 fitted values for each subject
-pred_vals <- posterior_linpred(mod1)
-head(ps$ps)
-pred_vals[1:6,1:6]
-
-# To get something similar to what we did with the traditional linear model, we
-# can use pp_check() with plotfun = "error_scatter_avg". This computes 4000
-# residuals for each subject, takes the average for each subject, and then plots
-# the average versus the observed value
-
-yrep <- posterior_predict(mod1, draws = 500)
-bayesplot::ppc_error_scatter_avg(ps$anxiety, yrep = yrep, x = ps$illness)
-
-pp_check(mod1, plotfun = "error_scatter_avg", x = "illness")
-pp_check(mod1, plotfun = "scatter_avg")
-
-# We can plot average residuals versus a predictor using
-# "error_scatter_avg_vs_x"
-pp_check(mod1, plotfun = "error_scatter_avg", x = "illness")
-
-# can also plot median and intervals of the sample coefficients with observed
-# values overlaid using "ppc_intervals" and "ppc_ribbon". However these are
-# probably only useful with smaller data sets.
-pp_check(mod1, plotfun = "ppc_intervals", x = 1:nrow(ps))
-pp_check(mod1, plotfun = "ppc_ribbon", x = 1:nrow(ps))
-
-# These plots all look good. 
-
-# Let's add an outlier to our data to see how these plots may be useful in
-# practice.
-tmp <- ps
-tmp[47,] <- tmp[46,]
-tmp$ps[47] <- 230
-mod1a <- stan_glm(ps ~ age + illness + anxiety, 
-                 data = tmp, 
-                 family = gaussian) 
-pp_check(mod1a, plotfun = "error_scatter_avg")
-pp_check(mod1a, plotfun = "ppc_intervals", x = 1:nrow(tmp))
-pp_check(mod1a, plotfun = "ppc_ribbon", x = 1:nrow(tmp))
-pp_check(mod1a)
-rm(tmp, mod1a)
 
 # CODE ALONG 1 ------------------------------------------------------------
 
@@ -308,10 +252,6 @@ confint(lm2) |> round(3)
 # (3) Assess model fit with a posterior predictive check. 
 
 
-
-# (4) Plot average residuals versus vacancy.
-
-
 # Back to presentation
 
 
@@ -319,9 +259,9 @@ confint(lm2) |> round(3)
 
 
 # fit a model with interactions using default priors;
-# perhaps we hypothesize the effect of anxiety depends on age;
-# anxiety:illness means "allow anxiety and age to interact"
-mod3 <- stan_glm(ps ~ age + illness + anxiety + anxiety:age, 
+# perhaps we hypothesize the effect of illness depends on age;
+# age:illness means "allow illness and age to interact"
+mod3 <- stan_glm(ps ~ age + illness + anxiety + age:illness, 
                  data = ps, 
                  family = gaussian)
 
@@ -339,16 +279,16 @@ pp_check(mod3)
 # Effect plots
 
 # visualize the interaction; there does not appear to be any interaction
-ggpredict(mod3, terms = c("age", "anxiety")) |> plot()
+ggpredict(mod3, terms = c("age", "illness")) |> plot()
 
 # change the order to change which variable is on the x-axis
-ggpredict(mod3, terms = c("anxiety", "age")) |> plot() 
+ggpredict(mod3, terms = c("illness", "age")) |> plot() 
 
-# Running ggpredict without plot shows the values
-ggpredict(mod3, terms = c("anxiety", "age"))
+# Running ggpredict without plot shows the predicted values
+ggpredict(mod3, terms = c("illness", "age"))
 
 # visualize the interaction at ages = 30, 40, 50
-ggpredict(mod3, terms = c("anxiety", "age [30,40,50]")) |> plot() 
+ggpredict(mod3, terms = c("illness", "age [30,40,50]")) |> plot() 
 
 # main effect plots
 ggpredict(mod3, terms = "illness") |> plot()
@@ -359,37 +299,58 @@ ggpredict(mod3, terms = "illness",
                         "anxiety" = 2.3)) |>
   plot()
 
-# The default credibility ribbon is for the mean response; 
-# setting ppd = TRUE returns the predicted response.
-ggpredict(mod3, terms = "illness", 
-          condition = c("age" = 50, 
-                        "anxiety" = 2.3), ppd = TRUE) |> 
-  plot()
+# Another interaction example
+
+# The carData package contains data on the prestige of Canadian occupations from
+# the early 1970s. “Prestige” is measured on a scale from 0 - 100, where higher
+# values mean higher prestige.
+
+# Model prestige as a function of income, type of occupation, and years of
+# education, with an interaction between income and type of occupation.
+
+pmod <- stan_glm(prestige ~ income*type + education, 
+                 data = Prestige, 
+                 family = gaussian)
+pmod
+summary(pmod)
+pp_check(pmod)
+
+# Visualize interactions
+ggpredict(pmod, terms = c("income", "type")) |> plot()
+
+# Notice the wide intervals for bc and wc at higher incomes. That's because those professions don't have observations at those incomes
+stripchart(income ~ type, data = Prestige)
+
+# Only make predictions for income ranging from 700 to 10000 by 100.
+ggpredict(pmod, terms = c("income[700:10000 by=100]", "type")) |> plot()
+
+# Visualize the fixed effect of education
+ggpredict(pmod, terms = "education") |> plot()
 
 # How does ggpredict() calculate these values? What is it actually predicting?
 
-# Let's predict estimated satisfaction when illness = 50, age = 50, and 
-# anxiety = 2.3
-ggpredict(mod3, terms = "illness[50]", 
-          condition = c("age" = 50, 
-                        "anxiety" = 2.3))
+# calculate one prediction for income = 1000, type = wc, and education = 10.8
+ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
 
 # To get that for a Bayesian model, we make 4000 predictions because we have
-# 4000 samples. The x matrix below contains, the intercept (1), illness (50),
-# age (50), anxiety (2.3), and the interaction for age and anxiety (50 * 2.3).
+# 4000 samples. The x matrix below contains the intercept (1), income (1000),
+# prof (0), wc (1), education (10.8) prof*income (0) and wc*income (1000).
 # The betas matrix contains the 4000 posterior samples.
-parms <- as.matrix(mod3)
+parms <- as.matrix(pmod)
 head(parms)
-x <- matrix(c(1, 50, 50, 2.3, 50*2.3), ncol = 1)
+
+# enter predictor values as a matrix
+x <- matrix(c(1, 1000, 0, 1, 10.8, 0, 1000*1), ncol = 1)
+x
 
 # use matrix algebra to make predictions (all but sigma)
-est <- parms[,-6] %*% x  
-head(est)
+est <- parms[,-8] %*% x  
+head(est) # 4000 predictions
 
 # The posterior_linpred() function does this for us
-posterior_linpred(mod3, newdata = data.frame(illness = 50, 
-                                             age = 50, 
-                                             anxiety = 2.3)) |> 
+posterior_linpred(pmod, newdata = data.frame(income = 1000, 
+                                             type = "wc", 
+                                             education = 10.8)) |> 
   head()
 
 # the estimate is the median of the 4000 predictions
@@ -398,31 +359,9 @@ median(est)
 # the CI is the posterior interval
 posterior_interval(est, prob = 0.95) 
 
-# Using ppd = TRUE incorporates random error from sigma, resulting in a wider
-# interval. To replicate the results of ggpredict() we need to set a seed.
-set.seed(1)
-ggpredict(mod3, terms = "illness[50]", 
-          condition = c("age" = 50, 
-                        "anxiety" = 2.3), 
-          ppd = TRUE)
+# compare to ggpredict
+ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
 
-# We repeat the same steps as above but now include random error. 
-set.seed(1)
-est_ppd <- parms[,-6] %*% x + rnorm(n = 4000, mean = 0, sd = parms[,6])
-head(est_ppd)
-
-# The posterior_predict() function does this for us
-set.seed(1)
-posterior_predict(mod3, newdata = data.frame(illness = 50, 
-                                             age = 50, 
-                                             anxiety = 2.3)) |> 
-  head()
-
-# the estimate is the median
-median(est_ppd)
-
-# the CI is the posterior interval
-posterior_interval(est_ppd)
 
 # CODE ALONG 2 ------------------------------------------------------------
 
@@ -465,6 +404,9 @@ ggplot(whiteside) +
 # Let's analyze data from a double-blind clinical trial investigating a new
 # treatment for rheumatoid arthritis. (From the vcd package)
 arthritis <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/arthritis.csv")
+arthritis$Treatment <- factor(arthritis$Treatment)
+arthritis$Sex <- factor(arthritis$Sex)
+
 
 # Treatment = factor indicating treatment (Placebo, Treated).
 # Sex = factor indicating sex (Female, Male).
@@ -475,7 +417,12 @@ xtabs(~ Better + Treatment, data = arthritis)
 xtabs(~ Better + Sex, data = arthritis)
 stripchart(Age ~ Better, data = arthritis, method = "jitter")
 
+m <- glm(Better ~ Treatment + Sex + Age,
+         data = arthritis,
+         family = binomial) 
+summary(m)
 
+# Bayesian approach
 # Model Better as a function of Treatment, Sex and Age
 # Need to set family = binomial
 # use default priors
@@ -503,7 +450,7 @@ exp(coef(arthritis.blm)["TreatmentTreated"])
 # get the posterior interval of the odds ratios
 posterior_interval(arthritis.blm) |> exp()
 
-# Odds of getting "better" appear to be at least 2.6 times higher for Treated,
+# Odds of getting "better" appear to be at least 2.5 times higher for Treated,
 # versus the odds of getting better when on Placebo. (holding other variables
 # constant)
 
@@ -511,17 +458,19 @@ posterior_interval(arthritis.blm) |> exp()
 # useful for logistic regression models.
 pp_check(arthritis.blm)
 
-# An alternative is to use a binned error plot.
+# An alternative is to use the "stat" and "bars" plot functions.
 
-# The rstanarm package provides the "error_binned" option to create a binned
-# error plot. The idea is you divide the data into bins based on the their
-# fitted values, and then plot average residual versus average fitted value. If
-# we have a good model, we expect about 95% of the residuals to fall within the
-# error bounds. Use the nreps argument to specify how many plots you want to
-# create. If we specify 9, that means use the first 9 of the 4000 samples to
-# create the plots.
-pp_check(arthritis.blm, plotfun = "error_binned", nreps = 9)
+# The "stat" plot function allows us to look at Pr(y = 1) by comparing the
+# proportion of 1s in the data vs the proportions of 1s in the posterior
+# predictive distribution:
+pp_check(arthritis.blm, plotfun = "stat")
 
+# The "bars" function allows us to look at the distribution of 0s and 1s by
+# comparing the proportion of 0s and 1s in the data vs the proportions of 0s and
+# 1s in the posterior predictive distribution:
+pp_check(arthritis.blm, plotfun = "bars")
+
+# Both of these plots are encouraging.
 
 # Effect plots
 
@@ -563,6 +512,109 @@ ggpredict(arthritis.blm, terms = "Treatment",
 
 # (4) create an effect plot to visualize the interaction. 
 
+
+# Model comparison --------------------------------------------------------
+
+# Let's fit a few different models for the Arthritis data
+# main effects only
+arthritis.blm1 <- stan_glm(Better ~ Treatment + Sex + Age,
+                           data = arthritis,
+                           family = binomial) 
+
+# all two-way interactions
+arthritis.blm2 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
+                           data = arthritis,
+                           family = binomial) 
+
+# only two-way interactions for Treatment
+arthritis.blm3 <- stan_glm(Better ~ Treatment * Sex + Treatment * Age,
+                           data = arthritis,
+                           family = binomial) 
+
+# Let's look at the waic
+waic(arthritis.blm1)
+waic(arthritis.blm2)
+waic(arthritis.blm3)
+
+# elpd_waic = expected log predictive density. Similar to deviance.
+# p_waic = effective number of parameters. A bias correction used in the
+#          calculation of elpd
+# waic = -2(elpd_waic)
+
+# Confirming waic calculation for first model
+waic.1 <- waic(arthritis.blm1)
+waic.1$estimates
+-2* (waic.1$estimates["elpd_waic","Estimate"])
+
+# Compare all models using loo_compare. The "best" model is listed first. Each
+# subsequent comparison is to that model.
+loo_compare(waic(arthritis.blm1),
+            waic(arthritis.blm2),
+            waic(arthritis.blm3))
+
+# The difference in ELPD will be negative if the expected out-of-sample
+# predictive accuracy of the first model is higher. If the difference is
+# positive, then the second model is preferred. But check the SE of the diff!
+
+# Now what about those warnings?
+waic.2 <- waic(arthritis.blm2) # 4 estimates > 0.4
+waic.3 <- waic(arthritis.blm3) # 3 estimates > 0.4
+
+# see the estimates > 0.4
+head(waic.2$pointwise)
+waic.2$pointwise[waic.2$pointwise[,"p_waic"] > 0.4,]
+
+head(waic.3$pointwise)
+waic.3$pointwise[waic.3$pointwise[,"p_waic"] > 0.4,]
+
+# Side note: p_waic is the sum of the p_waic pointwise estimates
+waic.2
+sum(waic.2$pointwise[,"p_waic"])
+
+# According to Vehtari, A., Gelman, A., and Gabry, J. (2017), "based on our
+# simulation experiments it seems that p_waic is unreliable if any of
+# the terms exceeds 0.4."
+
+
+# OK, let's try loo instead...
+loo_compare(loo(arthritis.blm1), 
+            loo(arthritis.blm2), 
+            loo(arthritis.blm3))
+
+# How does it differ from loo_compare using waic?
+loo_compare(waic(arthritis.blm1),
+            waic(arthritis.blm2),
+            waic(arthritis.blm3))
+
+# Says McElreath (2016): "The attitude this book encourages is to retain and
+# present all models, no matter how big or small the differences in WAIC (or
+# another criterion)"
+
+# Example code for comparing multiple models with a similar name.
+# - ".blm[0-9]$" is a regular expression that means "ends with .blm and a number"
+# - mget gets multiple objects from the memory by name
+# - lapply waic or loo to the objects
+# - loo_compare accepts a list of loo objects
+
+loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), waic))
+loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
+
+# YOUR TURN #4 ------------------------------------------------------------
+
+# Fit the following models using the patient satisfaction data:
+ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
+ps_mod2 <- update(ps_mod1, . ~ . - age, data = ps)
+ps_mod3 <- update(ps_mod1, . ~ . - anxiety, data = ps)
+ps_mod4 <- update(ps_mod1, . ~ . - illness, data = ps)
+ps_mod5 <- update(ps_mod1, . ~ . - age - illness, data = ps)
+ps_mod6 <- update(ps_mod1, . ~ . - anxiety - illness, data = ps)
+ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
+
+# compare the models using waic and/or loo.
+# TIP: Try the lapply/mget code above with the regular expression "^ps_"
+
+# RECALL: a negative difference means we prefer the first model. A positive
+# difference means we prefer the second model. But check SE of diff.
 
 
 # WE'RE DONE!
