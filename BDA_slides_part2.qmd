@@ -500,18 +500,17 @@ Let's go to R!
 
 ## Model comparison
 
-Let's say we have the following model:
-  
-  $$y = \beta_0 + \beta_1x1 + \beta_2x2$$
-  
-Do we need $x2$? Maybe the following model is just as "good"?
+Let's say we have the following models:
   
   $$y = \beta_0 + \beta_1x1$$
-  
-Or maybe a model with just $x2$ is better than a model with just $x1$.
 
-$$y = \beta_0 + \beta_2x2$$
+
+  $$y = \beta_0 + \beta_1x1 + \beta_2x2$$
   
+  $$y = \beta_0 + \beta_1x1 + \beta_2x2 + \beta_3x1 \times \beta_2x2$$
+
+Which model is "best"? 
+
   
 ## Model comparison
   
@@ -600,7 +599,7 @@ Let's go to R one last time!
 
 ::: {style="font-size: 60%;"}
 
-- Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. 
+- Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. <https://avehtari.github.io/ROS-Examples/>
 
 - Goodrich B, Gabry J, Ali I & Brilleman S. (2025). rstanarm: Bayesian applied regression modeling via Stan. R package version 2.32.2 <https://mc-stan.org/rstanarm>.
 
@@ -608,7 +607,7 @@ Let's go to R one last time!
 
 - Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. _The Quantitative Methods for Psychology_, 14(2), 99-119.
 
-- Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. <https://vasishth.github.io/bayescogsci/book/>
+- Nicenboim, B., Schad, D., and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. <https://vasishth.github.io/bayescogsci/book/>
 
 - Vehtari, A., Gelman, A. & Gabry, J. Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. _Stat Comput_ 27, 1413–1432 (2017). <https://doi.org/10.1007/s11222-016-9696-4>
 :::

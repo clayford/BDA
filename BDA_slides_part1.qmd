@@ -580,7 +580,7 @@ Let's return to the R script.
 ::: {style="font-size: 60%;"}
 - Betancourt, Michael. (2018) _A Conceptual Introduction to Hamiltonian Monte Carlo_. <https://arxiv.org/pdf/1701.02434.pdf>
 
-- Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. 
+- Gelman, A., Hill, J, & Vehtari, A. (2020) _Regression and Other Stories_. Cambridge University Press. <https://avehtari.github.io/ROS-Examples/>
 
 - Goodrich B, Gabry J, Ali I & Brilleman S. (2025). rstanarm: Bayesian applied regression modeling via Stan. R package version 2.32.2 <https://mc-stan.org/rstanarm>.
 
