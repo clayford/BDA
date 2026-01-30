@@ -518,17 +518,17 @@ ggpredict(arthritis.blm, terms = "Treatment",
 
 # Traditional approach uses test statistics and/or AIC/BIC;
 # Fit three progressively more complex models and compare
-m1 <- glm(Better ~ Treatment,
-          data = arthritis,
+m1 <- glm(Better ~ Treatment, 
+          data = arthritis, 
           family = binomial) 
-m2 <- glm(Better ~ Treatment + Sex,
-          data = arthritis,
+m2 <- glm(Better ~ Treatment + Sex, 
+          data = arthritis, 
           family = binomial) 
-m3 <- glm(Better ~ Treatment + Sex + Age,
-          data = arthritis,
+m3 <- glm(Better ~ Treatment + Sex + Age, 
+          data = arthritis, 
           family = binomial) 
 
-# compare using test
+# compare using partial F test
 anova(m1, m2, m3)
 
 # compare using information criteria
@@ -552,9 +552,9 @@ for(i in 1:nrow(arthritis)){
             subset = -i,       # each time leave out the ith obs
             family = binomial) 
   # fitted value for the ith obs left out of model
-  yhat <- predict(m, newdata = arthritis[i,], type = "response")
+  fit <- predict(m, newdata = arthritis[i,], type = "response")
   # save difference squared
-  e[i] <- (arthritis$Better[i] - yhat)^2
+  e[i] <- (arthritis$Better[i] - fit)^2
 }
 
 # calculate LOO CV
@@ -576,7 +576,7 @@ rbind(m1 = cv.m1$delta[1],
 
 # We can also use LOO cross validation for Bayesian models 
 
-# Refit Bayesian models
+# Refit Bayesian models with default priors
 bm1 <- stan_glm(Better ~ Treatment,
                 data = arthritis,
                 family = binomial) 
@@ -595,9 +595,14 @@ loo3 <- loo(bm3)
 # compare all CV results
 loo_compare(loo1, loo2, loo3)
 
+# can also name models; need to include in a list() object
+loo_compare(list("model 1" = loo1, "model 2" = loo2, "model 3" = loo3))
+
 # Model listed first is the "best" of the three
 # elpd_diff is the difference in expected predictive accuracy
 # ELPD = expected log pointwise predictive density
+# "differences smaller than 4 are hard to distinguish from noise" 
+# (Gelman et al 2020)
 
 # printing the loo() result shows additional details
 loo3
@@ -610,19 +615,24 @@ loo3
 # "well behaved". 
 
 # If p_loo > N or p_loo > p, then model has weak predictive capability and may
-# indicate severe model misspecification.
+# indicate model misspecification.
 
 # Pareto k diagnostic estimates how far an individual leave-one-out distribution
-# is from the full distribution.
+# is from the full distribution. It's a way to check for outliers/influence.
+
+# From the loo documentation:
+# "Pareto k is also useful as a measure of influence of an observation. Highly
+# influential observations have high k values."
 
 # plot() a loo object can help identify outliers with respect to model 
 plot(loo3)
 
 # fit model that has "outliers"
-# all two way interactions
+# all two way interactions;
+# notice the seed argument to make results replicable
 bm4 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
                 data = arthritis,
-                family = binomial)
+                family = binomial, seed = 123)
 bm4
 
 # perform LOO CV
@@ -631,12 +641,19 @@ plot(loo4)
 plot(loo4, label_points = TRUE)
 arthritis[52,]
 
-# can also find "outlier" by following directions in warning
-loo4 <- loo(bm4, k_threshold = 0.7)
-plot(loo4)
+# following the directions in the warning does literal LOO CV for observation 52 
+loo4a <- loo(bm4, k_threshold = 0.7)
+plot(loo4a) # obs 52 no longer plotted
+
+# No Pareto k value is calculated for obs 52
+loo4a$diagnostics$pareto_k[52]
 
 # But is this model any better? No.
-loo_compare(loo3, loo4)
+loo_compare(loo3, loo4a)
+
+# See also the loo package glossary
+# ?`loo-glossary`
+
 
 
 # YOUR TURN #4 ------------------------------------------------------------
@@ -649,12 +666,6 @@ ps_mod4 <- update(ps_mod1, . ~ . - illness, data = ps)
 
 # compare the models using LOO CV
 
-loo_ps_1 <- loo(ps_mod1)
-loo_ps_2 <- loo(ps_mod2)
-loo_ps_3 <- loo(ps_mod3)
-loo_ps_4 <- loo(ps_mod4)
-
-loo_compare(loo_ps_1,loo_ps_2, loo_ps_3, loo_ps_4)
 
 
 

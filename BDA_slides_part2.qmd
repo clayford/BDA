@@ -515,69 +515,68 @@ $$y = \beta_0 + \beta_2x2$$
   
 ## Model comparison
   
-In traditional statistics, models are often compared using hypothesis tests or information criteria, such as AIC or BIC. 
+In traditional statistics, models are often compared using hypothesis tests or information criteria such as AIC or BIC. 
 
-In Bayesian statistics, the widely applicable information criterion (WAIC) is often used.
-
-It is relatively easy to implement with the `waic()` function in the `rstanarm` package.
-
-## Information criteria
-
-Information criteria in general provide an approximation of predictive accuracy. (i.e., how accurate will our model perform with out-of-sample data?)
-
-The criteria values by themselves are not meaningful. We compare them across different models and prefer smaller values.
-
-Is the model with the smallest information criteria the "best" model? Not necessarily. 
-
-Think of comparing them like judging the results of a horserace. Winning by photo-finish doesn't instill much confidence that the winning horse is always better. We're more confident a horse is always better when they win by several seconds. 
-
-## WAIC
-
-The well-known Akaike information criterion (AIC) assumes flat (non-informative priors) and that the posterior is approximately normal.
-
-The widely applicable information criterion (WAIC) accommodates informative priors and makes no assumption about the shape of the posterior. 
-
-Say we have two models, `m1` and `m2`. Using `rstanarm` we can compare as follows:
-  
 ```{r eval=FALSE}
-waic1 <- waic(m1)
-waic2 <- waic(m2)
-loo_compare(waic1, waic2)
-# or
-loo_compare(waic(m1), waic(m2))
+m1 <- glm(y ~ x1, data = d, family = gaussian)
+m2 <- glm(y ~ x1 + x2, data = d, family = gaussian)
+m3 <- glm(y ~ x1 + x2 + x1:x2, data = d, family = gaussian)
+anova(m1, m2, m3) # partial F tests
+AIC(m1, m2, m3)
+BIC(m1, m2, m3)
 ```
 
-## `loo_compare` output
+The partial F test approach requires "nested" models. 
+
+## Cross Validation
+
+Models can also be compared using Cross Validation (CV).
+
+1. Fit a model with portion of data held out
+2. Use the fitted model to predict outcome for held out data
+3. Calculate "performance" using a metric such as mean squared error 
+4. Repeat 1-3 such that all data gets a turn being held out
+5. Take average of performance
+
+A model with lower mean squared error is presumably better.
+
+## Leave One Out CV
+
+Leave One Out (LOO) CV leaves one observation out a time. This can be computationally demanding.
+
+The loo package implements LOO CV for Bayesian models. rstanarm calls this package to allow for model comparisons.
+
+The `loo()` function uses a mathematical "shortcut" that approximates the LOO performance while only fitting the model once. 
+
+## Bayesian model comparison
+
+Use the `loo()` function to carry out LOO CV, then compare models using `loo_compare()`.  
+
+```{r eval=FALSE}
+bm1 <- stan_glm(y ~ x1, data = d, family = gaussian)
+bm2 <- stan_glm(y ~ x1 + x2, data = d, family = gaussian)
+bm3 <- stan_glm(y ~ x1 + x2 + x1:x2, data = d, family = gaussian)
+loo1 <- loo(m1)
+loo2 <- loo(m2)
+loo3 <- loo(m3)
+loo_compare(loo1, loo2, loo3)
+```
+
+
+## `loo_compare()` output
 
 ```{r echo=FALSE}
-m1 <- readRDS("rds/m1.rds")
-m2 <- readRDS("rds/m2.rds")
-
+lc <- readRDS(file = "rds/lc.rds")
+lc
 ```
 
-The output reports the difference in expected log predictive density (ELPD) along with the standard error of the difference. 
+- The output reports the _difference_ in expected log predictive density (ELPD) along with the standard error of the difference. 
+- ELPD summarizes predictive performance. Higher is better.
+- Model listed first is the "best" of the three.
+- Each comparison is to the first model.
+- According to Gelman et al (2020), "differences smaller than 4 are hard to distinguish from noise"
 
-
-```{r}
-loo_compare(waic(m1), waic(m2))
-```
-
-The difference in ELPD will be negative if the expected out-of-sample predictive accuracy of the first model is higher. If the difference is positive, then the second model is preferred. 
-
-The standard error of the difference, `se_diff`, gives us some idea of how much "better" the winning model really is.
-
-## `loo` versus `waic`
-
-McElreath (2016) recommends using WAIC for model selection. Vehtari, Gelman, and Gabry (2017) recommend Leave-one-out cross-validation (LOO).   
-\  
-
-> Although WAIC is asymptotically equal to LOO, we demonstrate that PSIS-LOO is more robust in the finite case with weak priors or influential observations.
-
-PSIS stands for Pareto-smoothed importance sampling, which is used in the computation of LOO. 
-
-The `loo_compare` function will advise us when we should consider using LOO instead of WAIC.
-
-Let's go to R!
+Let's go to R one last time!
 
 
 
