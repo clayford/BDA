@@ -90,4 +90,19 @@ plot(arthritis.blm2, plotfun = "dens")
 
 ggpredict(arthritis.blm2, terms = c("Age [all]", "Treatment")) |> plot()
 
+# YOUR TURN #4 ------------------------------------------------------------
 
+# Fit the following models using the patient satisfaction data:
+ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
+ps_mod2 <- update(ps_mod1, . ~ . - age, data = ps)
+ps_mod3 <- update(ps_mod1, . ~ . - anxiety, data = ps)
+ps_mod4 <- update(ps_mod1, . ~ . - illness, data = ps)
+
+# compare the models using LOO CV
+
+loo_ps_1 <- loo(ps_mod1)
+loo_ps_2 <- loo(ps_mod2)
+loo_ps_3 <- loo(ps_mod3)
+loo_ps_4 <- loo(ps_mod4)
+
+loo_compare(loo_ps_1,loo_ps_2, loo_ps_3, loo_ps_4)

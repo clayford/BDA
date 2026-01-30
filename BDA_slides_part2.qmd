@@ -515,15 +515,15 @@ $$y = \beta_0 + \beta_2x2$$
   
 ## Model comparison
   
-In traditional statistics, models are often compared using hypothesis tests or information criteria, such as AIC. 
+In traditional statistics, models are often compared using hypothesis tests or information criteria, such as AIC or BIC. 
 
 In Bayesian statistics, the widely applicable information criterion (WAIC) is often used.
 
-It is relatively easy to implement with the `waic` function in the `rstanarm` package.
+It is relatively easy to implement with the `waic()` function in the `rstanarm` package.
 
 ## Information criteria
 
-Information criteria in general provide an approximation of predictive accuracy. (ie, how accurate will our model perform with out-of-sample data?)
+Information criteria in general provide an approximation of predictive accuracy. (i.e., how accurate will our model perform with out-of-sample data?)
 
 The criteria values by themselves are not meaningful. We compare them across different models and prefer smaller values.
 
@@ -609,8 +609,9 @@ Let's go to R!
 
 - Muth, C., Oravecz, Z., & Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. _The Quantitative Methods for Psychology_, 14(2), 99-119.
 
-- Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. https://vasishth.github.io/bayescogsci/book/
+- Nicenboim, B., Schad, D. , and Vasishth, S. (2021) An Introduction to Bayesian Data Analysis for Cognitive Science. <https://vasishth.github.io/bayescogsci/book/>
 
+- Vehtari, A., Gelman, A. & Gabry, J. Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. _Stat Comput_ 27, 1413–1432 (2017). <https://doi.org/10.1007/s11222-016-9696-4>
 :::
 
 ## Thanks for coming

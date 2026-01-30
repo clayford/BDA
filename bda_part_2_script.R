@@ -415,6 +415,7 @@ arthritis$Sex <- factor(arthritis$Sex)
 
 xtabs(~ Better + Treatment, data = arthritis)
 xtabs(~ Better + Sex, data = arthritis)
+stripchart(Age ~ Treatment, data = arthritis, method = "jitter")
 stripchart(Age ~ Better, data = arthritis, method = "jitter")
 
 m <- glm(Better ~ Treatment + Sex + Age,
@@ -515,89 +516,128 @@ ggpredict(arthritis.blm, terms = "Treatment",
 
 # Model comparison --------------------------------------------------------
 
-# Let's fit a few different models for the Arthritis data
-# main effects only
-arthritis.blm1 <- stan_glm(Better ~ Treatment + Sex + Age,
-                           data = arthritis,
-                           family = binomial) 
+# Traditional approach uses test statistics and/or AIC/BIC;
+# Fit three progressively more complex models and compare
+m1 <- glm(Better ~ Treatment,
+          data = arthritis,
+          family = binomial) 
+m2 <- glm(Better ~ Treatment + Sex,
+          data = arthritis,
+          family = binomial) 
+m3 <- glm(Better ~ Treatment + Sex + Age,
+          data = arthritis,
+          family = binomial) 
 
-# all two-way interactions
-arthritis.blm2 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
-                           data = arthritis,
-                           family = binomial) 
+# compare using test
+anova(m1, m2, m3)
 
-# only two-way interactions for Treatment
-arthritis.blm3 <- stan_glm(Better ~ Treatment * Sex + Treatment * Age,
-                           data = arthritis,
-                           family = binomial) 
+# compare using information criteria
+AIC(m1, m2, m3)
+BIC(m1, m2, m3)
 
-# Let's look at the waic
-waic(arthritis.blm1)
-waic(arthritis.blm2)
-waic(arthritis.blm3)
+# Model 3 is selected as "best" of the three
 
-# elpd_waic = expected log predictive density. Similar to deviance.
-# p_waic = effective number of parameters. A bias correction used in the
-#          calculation of elpd
-# waic = -2(elpd_waic)
+# Can also use Cross Validation to compare models
+# Leave one out (LOO)
+# common cost function: mean((obs - predicted)^2)
+# smaller cost means a better performing model
 
-# Confirming waic calculation for first model
-waic.1 <- waic(arthritis.blm1)
-waic.1$estimates
--2* (waic.1$estimates["elpd_waic","Estimate"])
+# vector to store difference squared
+e <- numeric(length = nrow(arthritis))
 
-# Compare all models using loo_compare. The "best" model is listed first. Each
-# subsequent comparison is to that model.
-loo_compare(waic(arthritis.blm1),
-            waic(arthritis.blm2),
-            waic(arthritis.blm3))
+# for loop to run LOO CV
+for(i in 1:nrow(arthritis)){
+  m <- glm(Better ~ Treatment,
+            data = arthritis,
+            subset = -i,       # each time leave out the ith obs
+            family = binomial) 
+  # fitted value for the ith obs left out of model
+  yhat <- predict(m, newdata = arthritis[i,], type = "response")
+  # save difference squared
+  e[i] <- (arthritis$Better[i] - yhat)^2
+}
 
-# The difference in ELPD will be negative if the expected out-of-sample
-# predictive accuracy of the first model is higher. If the difference is
-# positive, then the second model is preferred. But check the SE of the diff!
+# calculate LOO CV
+mean(e)
 
-# Now what about those warnings?
-waic.2 <- waic(arthritis.blm2) # 4 estimates > 0.4
-waic.3 <- waic(arthritis.blm3) # 3 estimates > 0.4
+# A faster way using the cv.glm() function in the boot package
+# does LOO CV by default; set K = 10 to do 10-fold CV
+library(boot)
+cv.m1 <- cv.glm(data = arthritis, glmfit = m1)
+cv.m1$delta # second value is "bias corrected"
 
-# see the estimates > 0.4
-head(waic.2$pointwise)
-waic.2$pointwise[waic.2$pointwise[,"p_waic"] > 0.4,]
+cv.m2 <- cv.glm(data = arthritis, glmfit = m2)
+cv.m3 <- cv.glm(data = arthritis, glmfit = m3)
 
-head(waic.3$pointwise)
-waic.3$pointwise[waic.3$pointwise[,"p_waic"] > 0.4,]
+# Third model also selected by cross validation
+rbind(m1 = cv.m1$delta[1], 
+      m2 = cv.m2$delta[1], 
+      m3 = cv.m3$delta[1])
 
-# Side note: p_waic is the sum of the p_waic pointwise estimates
-waic.2
-sum(waic.2$pointwise[,"p_waic"])
+# We can also use LOO cross validation for Bayesian models 
 
-# According to Vehtari, A., Gelman, A., and Gabry, J. (2017), "based on our
-# simulation experiments it seems that p_waic is unreliable if any of
-# the terms exceeds 0.4."
+# Refit Bayesian models
+bm1 <- stan_glm(Better ~ Treatment,
+                data = arthritis,
+                family = binomial) 
+bm2 <- stan_glm(Better ~ Treatment + Sex,
+                data = arthritis,
+                family = binomial) 
+bm3 <- stan_glm(Better ~ Treatment + Sex + Age,
+                data = arthritis,
+                family = binomial) 
 
+# Using the loo() function to perform LOO CV
+loo1 <- loo(bm1)
+loo2 <- loo(bm2)
+loo3 <- loo(bm3)
 
-# OK, let's try loo instead...
-loo_compare(loo(arthritis.blm1), 
-            loo(arthritis.blm2), 
-            loo(arthritis.blm3))
+# compare all CV results
+loo_compare(loo1, loo2, loo3)
 
-# How does it differ from loo_compare using waic?
-loo_compare(waic(arthritis.blm1),
-            waic(arthritis.blm2),
-            waic(arthritis.blm3))
+# Model listed first is the "best" of the three
+# elpd_diff is the difference in expected predictive accuracy
+# ELPD = expected log pointwise predictive density
 
-# Says McElreath (2016): "The attitude this book encourages is to retain and
-# present all models, no matter how big or small the differences in WAIC (or
-# another criterion)"
+# printing the loo() result shows additional details
+loo3
 
-# Example code for comparing multiple models with a similar name.
-# - ".blm[0-9]$" is a regular expression that means "ends with .blm and a number"
-# - mget gets multiple objects from the memory by name
-# - lapply waic or loo to the objects
-# - loo_compare accepts a list of loo objects
+# elpd = estimated log score with uncertainty (SE)
+# looic = -2 * elpd_loo (similar to deviance)
+# p_loo = estimated "effective number of parameters". 
 
-loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), waic))
-loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
+# If p_loo < N and p_loo < p (p = total number of parameters), then model is
+# "well behaved". 
+
+# If p_loo > N or p_loo > p, then model has weak predictive capability and may
+# indicate severe model misspecification.
+
+# Pareto k diagnostic estimates how far an individual leave-one-out distribution
+# is from the full distribution.
+
+# plot() a loo object can help identify outliers with respect to model 
+plot(loo3)
+
+# fit model that has "outliers"
+# all two way interactions
+bm4 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
+                data = arthritis,
+                family = binomial)
+bm4
+
+# perform LOO CV
+loo4 <- loo(bm4)
+plot(loo4)
+plot(loo4, label_points = TRUE)
+arthritis[52,]
+
+# can also find "outlier" by following directions in warning
+loo4 <- loo(bm4, k_threshold = 0.7)
+plot(loo4)
+
+# But is this model any better? No.
+loo_compare(loo3, loo4)
+
 
 # YOUR TURN #4 ------------------------------------------------------------
 
@@ -606,15 +646,16 @@ ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
 ps_mod2 <- update(ps_mod1, . ~ . - age, data = ps)
 ps_mod3 <- update(ps_mod1, . ~ . - anxiety, data = ps)
 ps_mod4 <- update(ps_mod1, . ~ . - illness, data = ps)
-ps_mod5 <- update(ps_mod1, . ~ . - age - illness, data = ps)
-ps_mod6 <- update(ps_mod1, . ~ . - anxiety - illness, data = ps)
-ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
 
-# compare the models using waic and/or loo.
-# TIP: Try the lapply/mget code above with the regular expression "^ps_"
+# compare the models using LOO CV
 
-# RECALL: a negative difference means we prefer the first model. A positive
-# difference means we prefer the second model. But check SE of diff.
+loo_ps_1 <- loo(ps_mod1)
+loo_ps_2 <- loo(ps_mod2)
+loo_ps_3 <- loo(ps_mod3)
+loo_ps_4 <- loo(ps_mod4)
+
+loo_compare(loo_ps_1,loo_ps_2, loo_ps_3, loo_ps_4)
+
 
 
 # WE'RE DONE!
@@ -728,121 +769,9 @@ walk2(priors$prior$adjusted_scale,
                                  xlab = z))
 
 
-# Appendix: using loo for model checking ----------------------------------
 
 
-# check for influential data using loo(); compute approximate leave-one-out
-# (loo) cross-validation
-
-# Here we do it for the patient satisfaction model
-
-# p_loo = estimated effective number of parameters (should be similar to
-#         specified model); higher than specified model is not good.
-mod1.loo <- loo(mod1)
-mod1.loo
-
-# For model-checking we want "All Pareto k estimates are good (k < 0.5)"
-
-# associated plot; 
-# This looks good.
-plot(mod1.loo, label_points = TRUE)
-
-# "Using the label_points argument will label any k values larger than 0.7 with
-# the index of the corresponding data point. These high values are often the
-# result of model misspecification and frequently correspond to data points that
-# would be considered 'outliers' in the data and surprising according to the
-# model"
-
-# vignette("loo2-example", package = "loo")
-
-
-# Appendix: model comparison ----------------------------------------------
-
-## Model comparison
-
-# In traditional statistics, models are often compared using hypothesis tests or
-# information criteria, such as AIC.
-
-# In Bayesian statistics, the Pareto Smoothed Importance-Sampling Leave-One-Out
-# cross-validation (PSIS-LOO) is often used.
-
-# It is relatively easy to implement with the `loo()` and `loo_compare()`
-# functions in the `rstanarm` package.
-
-# Let's fit a few different models for the Arthritis data
-# main effects only
-arthritis.blm1 <- stan_glm(Better ~ Treatment + Sex + Age,
-                           data = arthritis,
-                           family = binomial) 
-
-# all two-way interactions
-arthritis.blm2 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
-                           data = arthritis,
-                           family = binomial) 
-
-# only two-way interactions for Treatment
-arthritis.blm3 <- stan_glm(Better ~ Treatment * Sex + Treatment * Age,
-                           data = arthritis,
-                           family = binomial) 
-
-
-# compare these models using loo() and loo_compare()
-
-# First we just use loo()
-loo(arthritis.blm1)
-loo(arthritis.blm2)
-loo(arthritis.blm3)
-
-# elpd_loo = expected log predictive density.
-# p_loo = effective number of parameters; aka overfitting penalty
-# looic = LOO information criterion; -2(elpd_loo)
-
-# Notice the warnings. Some observations are considered "outliers" in the data
-# and surprising according to the model. The warning message gives us helpful
-# advice: "We recommend calling 'loo' again with argument 'k_threshold = 0.7'"
-
-loo(arthritis.blm2, k_threshold = 0.7)
-loo(arthritis.blm3, k_threshold = 0.7)
-
-
-# Compare all models using loo_compare. The "best" model is listed first. Each
-# subsequent comparison is to that model.
-
-# The output reports the difference in expected log predictive density (ELPD)
-# along with the standard error of the difference.
-
-# The first model listed has the largest ELPD. Each subsequent model is compared
-# to the first model.
-
-# The standard error of the difference, `se_diff`, gives us some idea of how
-# certain that difference is. If `se_diff` is bigger than `elpd_diff`, then we
-# shouldn't be so sure the first model is necessarily "better".
-
-loo_compare(loo(arthritis.blm1),
-            loo(arthritis.blm2, k_threshold = 0.7),
-            loo(arthritis.blm3, k_threshold = 0.7))
-
-# It appears model 1 may be no different than model 2. Notice the large standard
-# error on the difference. Model 1 appears to be preferable to model 3.
-
-
-# The expected log predictive density (ELPD) is basically a scoring rule to
-# assess how well a model predicts new data.
-
-# When comparing models, models with higher ELPD are closer to the "true" data
-# generating process.
-
-# Remember, "expected" is the key word. These are just estimates. Pay attention
-# to the standard error of the difference (`se_diff`)
-
-
-# Example code for comparing multiple models with a similar name.
-# - ".blm[0-9]$" is a regular expression that means "ends with .blm and a number"
-# - mget gets multiple objects from the memory by name
-# - lapply loo to the objects
-# - loo_compare accepts a list of loo objects
-
-loo_compare(lapply(mget(ls(pattern = ".blm[0-9]$")), loo))
+# Appendix: comparing multiple models with a similar name -----------------
 
 # Fit the following models using the patient satisfaction data:
 ps_mod1 <- stan_glm(ps ~ age + illness + anxiety, data = ps, family = gaussian)
@@ -853,10 +782,15 @@ ps_mod5 <- update(ps_mod1, . ~ . - age - illness, data = ps)
 ps_mod6 <- update(ps_mod1, . ~ . - anxiety - illness, data = ps)
 ps_mod7 <- update(ps_mod1, . ~ . - age - anxiety, data = ps)
 
-# compare the models using loo.
-# Use the lapply/mget code above with the regular expression "^ps_"
-
+# Do LOO CV on all models using lapply()
 loo_compare(lapply(mget(ls(pattern = "^ps_")), loo))
+
+# - "^ps_" is a regular expression that means "begins with ps"
+# - ls() lists objects in memory
+# - mget() gets multiple objects from memory by name
+# - lapply() applis loo() to the objects
+# - loo_compare() accepts a list of loo objects
+
 
 # Appendix: bonus analysis ------------------------------------------------
 
