@@ -71,7 +71,7 @@ bmod1 <- stan_glm(backpacks ~ 1,
 # In the console we see output on the sampling procedure. The model is not fit
 # with a closed-form math formula or numeric approximation but rather with a
 # sophisticated sampling engine. If something goes wrong with the sampling, you
-# should get a warning message in red saying not to trust the results.
+# should get a warning message saying not to trust the results.
 
 # you can turn off sampling messages by adding the argument `refresh = 0`
 # Not Recommended!

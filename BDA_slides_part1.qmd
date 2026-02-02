@@ -185,7 +185,7 @@ $$\text{posterior} = \frac{\text{likelihood} \times \text{prior}}{\text{average 
 
 ## Traditional approach: backpack data
 
-Estimate the mean and calculate a confidence interval using `t.test`
+Estimate the mean and calculate a confidence interval using `t.test()`
 
 ```{r echo=FALSE}
 dat <- readRDS("rds/backpacks_df.rds")
@@ -296,14 +296,13 @@ Can also analyze the data using a linear model.
 
 ```{r cache=TRUE}
 lm.out <- lm(y ~ grp, data = bat)
-confint(lm.out, parm = "grp")
 ```
 
 The model in this case:
 
-$$\text{battery life}_i \sim N(\mu = \alpha + \beta\text{ grp}, \sigma)$$
+$$\text{battery life}_i \sim N(\mu = \beta_0 + \beta_1\text{ grp}, \sigma)$$
 
-where $\alpha$ is mean of group 0, $\beta$ is the difference in means between group 1 and group 0, and $\sigma$ is the pooled standard deviation.
+where $\beta_0$ is mean of group 0, $\beta_1$ is the difference in means between group 1 and group 0, and $\sigma$ is the pooled standard deviation.
 
 ## Traditional approach: battery data
 
@@ -382,7 +381,6 @@ posterior_interval(bm.out, prob = 0.95,
 
 - `rstanarm` provides _weakly informative_ priors by default. (ie, rules out extreme positive or negative values)
 - _Uninformative priors_ place equal weight on all possible values (not recommended)
-- The types of priors and how you set them vary from model to model; for example `stan_lm` vs `stan_glm`
 - Using the default priors usually leads to similar results obtained by traditional modeling
 - To see the priors, call the `prior_summary` function on the model object
 

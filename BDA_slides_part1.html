@@ -442,7 +442,7 @@
   <meta name="generator" content="quarto-1.8.25">
 
   <meta name="author" content="Clay Ford">
-  <meta name="dcterms.date" content="2026-01-01">
+  <meta name="dcterms.date" content="2026-02-06">
   <title>Bayesian Data Analysis, Part 1</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1069,7 +1069,7 @@ Clay Ford
 </div>
 </div>
 
-  <p class="date">2026-01-01</p>
+  <p class="date">2026-02-06</p>
 </section>
 <section id="agenda" class="slide level2">
 <h2>Agenda</h2>
@@ -1213,7 +1213,7 @@ Clay Ford
 </section>
 <section id="traditional-approach-backpack-data" class="slide level2">
 <h2>Traditional approach: backpack data</h2>
-<p>Estimate the mean and calculate a confidence interval using <code>t.test</code></p>
+<p>Estimate the mean and calculate a confidence interval using <code>t.test()</code></p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href></a><span class="fu">t.test</span>(dat<span class="sc">$</span>backpacks)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -1346,21 +1346,16 @@ mean in group 0 mean in group 1
 <h2>Traditional approach: battery data</h2>
 <p>Can also analyze the data using a linear model.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href></a>lm.out <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat)</span>
-<span id="cb17-2"><a href></a><span class="fu">confint</span>(lm.out, <span class="at">parm =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>        2.5 %  97.5 %
-grp 0.3875019 1.33963</code></pre>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href></a>lm.out <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The model in this case:</p>
-<p><span class="math display">\[\text{battery life}_i \sim N(\mu = \alpha + \beta\text{ grp}, \sigma)\]</span></p>
-<p>where <span class="math inline">\(\alpha\)</span> is mean of group 0, <span class="math inline">\(\beta\)</span> is the difference in means between group 1 and group 0, and <span class="math inline">\(\sigma\)</span> is the pooled standard deviation.</p>
+<p><span class="math display">\[\text{battery life}_i \sim N(\mu = \beta_0 + \beta_1\text{ grp}, \sigma)\]</span></p>
+<p>where <span class="math inline">\(\beta_0\)</span> is mean of group 0, <span class="math inline">\(\beta_1\)</span> is the difference in means between group 1 and group 0, and <span class="math inline">\(\sigma\)</span> is the pooled standard deviation.</p>
 </section>
 <section id="traditional-approach-battery-data-2" class="slide level2">
 <h2>Traditional approach: battery data</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href></a><span class="fu">summary</span>(lm.out)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href></a><span class="fu">summary</span>(lm.out)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Call:
@@ -1388,7 +1383,7 @@ F-statistic:  13.3 on 1 and 48 DF,  p-value: 0.0006516</code></pre>
 <h2>Traditional approach: battery data</h2>
 <p>We can also extract a confidence interval from this model:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href></a><span class="fu">confint</span>(lm.out, <span class="at">parm =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href></a><span class="fu">confint</span>(lm.out, <span class="at">parm =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>        2.5 %  97.5 %
 grp 0.3875019 1.33963</code></pre>
@@ -1396,7 +1391,7 @@ grp 0.3875019 1.33963</code></pre>
 </div>
 <p>This basically matches what we get with the <code>t.test()</code> function, with a change in sign.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href></a><span class="fu">t.test</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat)<span class="sc">$</span>conf.int</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href></a><span class="fu">t.test</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat)<span class="sc">$</span>conf.int</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] -1.3406537 -0.3864785
 attr(,&quot;conf.level&quot;)
@@ -1410,8 +1405,8 @@ attr(,&quot;conf.level&quot;)
 <h2>Traditional approach: battery data</h2>
 <p>Once again we can use <code>glm()</code> with <code>family = gaussian</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href></a>glm.out <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat, <span class="at">family =</span> gaussian)</span>
-<span id="cb25-2"><a href></a><span class="fu">confint</span>(glm.out, <span class="at">parm =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href></a>glm.out <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat, <span class="at">family =</span> gaussian)</span>
+<span id="cb24-2"><a href></a><span class="fu">confint</span>(glm.out, <span class="at">parm =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    2.5 %    97.5 % 
 0.3994994 1.3276329 </code></pre>
@@ -1422,14 +1417,14 @@ attr(,&quot;conf.level&quot;)
 <h2>Bayesian approach: battery data</h2>
 <p>Again, we can transition smoothly to a Bayesian analysis using rstanarm. The syntax is practically the same with an argument for the prior.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href></a>bm.out <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat, </span>
-<span id="cb27-2"><a href></a>                   <span class="at">family =</span> gaussian,   </span>
-<span id="cb27-3"><a href></a>                   <span class="at">prior =</span> <span class="fu">normal</span>(<span class="dv">0</span>,<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href></a>bm.out <span class="ot">&lt;-</span> <span class="fu">stan_glm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat, </span>
+<span id="cb26-2"><a href></a>                   <span class="at">family =</span> gaussian,   </span>
+<span id="cb26-3"><a href></a>                   <span class="at">prior =</span> <span class="fu">normal</span>(<span class="dv">0</span>,<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Instead of a confidence interval we obtain a Bayesian uncertainty interval:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href></a><span class="fu">posterior_interval</span>(bm.out, <span class="at">prob =</span> <span class="fl">0.95</span>, </span>
-<span id="cb28-2"><a href></a>                   <span class="at">pars =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href></a><span class="fu">posterior_interval</span>(bm.out, <span class="at">prob =</span> <span class="fl">0.95</span>, </span>
+<span id="cb27-2"><a href></a>                   <span class="at">pars =</span> <span class="st">&quot;grp&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>         2.5%    97.5%
 grp 0.3868503 1.331482</code></pre>
@@ -1452,7 +1447,6 @@ grp 0.3868503 1.331482</code></pre>
 <ul>
 <li><code>rstanarm</code> provides <em>weakly informative</em> priors by default. (ie, rules out extreme positive or negative values)</li>
 <li><em>Uninformative priors</em> place equal weight on all possible values (not recommended)</li>
-<li>The types of priors and how you set them vary from model to model; for example <code>stan_lm</code> vs <code>stan_glm</code></li>
 <li>Using the default priors usually leads to similar results obtained by traditional modeling</li>
 <li>To see the priors, call the <code>prior_summary</code> function on the model object</li>
 </ul>
@@ -1474,7 +1468,7 @@ grp 0.3868503 1.331482</code></pre>
 <li>We can visually assess with a <em>trace plot</em></li>
 </ul>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href></a><span class="fu">plot</span>(stan_mod, <span class="at">plotfun =</span> <span class="st">&quot;trace&quot;</span>, <span class="at">pars =</span> <span class="st">&quot;var_name&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href></a><span class="fu">plot</span>(stan_mod, <span class="at">plotfun =</span> <span class="st">&quot;trace&quot;</span>, <span class="at">pars =</span> <span class="st">&quot;var_name&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>We hope to see the chains indistinguishable from one another</p>
 </section>
@@ -1505,8 +1499,8 @@ grp 0.3868503 1.331482</code></pre>
 <li>Example, increase from 2000 to 4000:</li>
 </ul>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href></a><span class="fu">stan_glm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat, <span class="at">family =</span> gaussian,   </span>
-<span id="cb31-2"><a href></a>         <span class="at">iter =</span> <span class="dv">4000</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href></a><span class="fu">stan_glm</span>(y <span class="sc">~</span> grp, <span class="at">data =</span> bat, <span class="at">family =</span> gaussian,   </span>
+<span id="cb30-2"><a href></a>         <span class="at">iter =</span> <span class="dv">4000</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="effective-sample-size-n_eff" class="slide level2">
@@ -1603,8 +1597,8 @@ grp 0.3868503 1.331482</code></pre>
 <p>The <code>as.matrix()</code> and <code>as.data.frame()</code> functions extract the posterior samples into a matrix and data frame, respectively.</p>
 <p>Let’s say we want to estimate the probability that the mean backpack weight is greater than 16 lbs. Notice we specify the <code>(Intercept)</code> parameter with the <code>$</code> operator. That’s because there are two parameters to choose from (<code>Intercept</code> and <code>sigma</code>)</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href></a>post_samp <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(bmod1)</span>
-<span id="cb32-2"><a href></a><span class="fu">mean</span>(post_samp<span class="sc">$</span><span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="sc">&gt;</span> <span class="dv">16</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href></a>post_samp <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(bmod1)</span>
+<span id="cb31-2"><a href></a><span class="fu">mean</span>(post_samp<span class="sc">$</span><span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="sc">&gt;</span> <span class="dv">16</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.544</code></pre>
 </div>
@@ -1614,8 +1608,8 @@ grp 0.3868503 1.331482</code></pre>
 <h2>Working directly with posterior distributions</h2>
 <p>Let’s say we want to estimate the probability that the difference in battery life is greater than 1 hour. Notice we specify the <code>grp</code> parameter with the <code>$</code> operator. That’s because there are three parameters to choose from (<code>Intercept</code>, <code>grp</code>, and <code>sigma</code>)</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href></a>post_samp2 <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(bm.out)</span>
-<span id="cb34-2"><a href></a><span class="fu">mean</span>(post_samp2<span class="sc">$</span>grp <span class="sc">&gt;</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href></a>post_samp2 <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(bm.out)</span>
+<span id="cb33-2"><a href></a><span class="fu">mean</span>(post_samp2<span class="sc">$</span>grp <span class="sc">&gt;</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 0.28475</code></pre>
 </div>
@@ -1625,14 +1619,14 @@ grp 0.3868503 1.331482</code></pre>
 <h2>Working directly with posterior distributions</h2>
 <p>Let’s say we want to create 95% posterior intervals for the means of the two brands of batteries. The <code>Intercept</code> is the estimated mean of grp 0. The sum of the <code>Intercept</code> and <code>grp</code> coefficient is the estimated mean of grp 1.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href></a><span class="fu">quantile</span>(post_samp2<span class="sc">$</span><span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span>, </span>
-<span id="cb36-2"><a href></a>         <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href></a><span class="fu">quantile</span>(post_samp2<span class="sc">$</span><span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span>, </span>
+<span id="cb35-2"><a href></a>         <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    2.5%    97.5% 
  9.82601 10.49629 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href></a><span class="fu">quantile</span>(post_samp2<span class="sc">$</span><span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="sc">+</span> post_samp2<span class="sc">$</span>grp, </span>
-<span id="cb38-2"><a href></a>         <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href></a><span class="fu">quantile</span>(post_samp2<span class="sc">$</span><span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="sc">+</span> post_samp2<span class="sc">$</span>grp, </span>
+<span id="cb37-2"><a href></a>         <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>    2.5%    97.5% 
 10.69355 11.35564 </code></pre>
@@ -1657,10 +1651,10 @@ grp 0.3868503 1.331482</code></pre>
 <div style="font-size: 60%;">
 <ul>
 <li><p>Betancourt, Michael. (2018) <em>A Conceptual Introduction to Hamiltonian Monte Carlo</em>. <a href="https://arxiv.org/pdf/1701.02434.pdf" class="uri">https://arxiv.org/pdf/1701.02434.pdf</a></p></li>
-<li><p>Gelman, A., Hill, J, &amp; Vehtari, A. (2020) <em>Regression and Other Stories</em>. Cambridge University Press.</p></li>
+<li><p>Gelman, A., Hill, J, &amp; Vehtari, A. (2020) <em>Regression and Other Stories</em>. Cambridge University Press. <a href="https://avehtari.github.io/ROS-Examples/" class="uri">https://avehtari.github.io/ROS-Examples/</a></p></li>
+<li><p>Goodrich B, Gabry J, Ali I &amp; Brilleman S. (2025). rstanarm: Bayesian applied regression modeling via Stan. R package version 2.32.2 <a href="https://mc-stan.org/rstanarm" class="uri">https://mc-stan.org/rstanarm</a>.</p></li>
 <li><p>McElreath, M. (2020). <em>Statistical Rethinking, 2nd Ed</em>. CRC Press. Boca Raton.</p></li>
 <li><p>Muth, C., Oravecz, Z., &amp; Gabry, J. (2018). User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinystan. <em>The Quantitative Methods for Psychology</em>, 14(2), 99-119. doi:10.20982/tqmp.14.2.p099</p></li>
-<li><p><code>rstanarm</code> web site: <a href="http://mc-stan.org/rstanarm/" class="uri">http://mc-stan.org/rstanarm/</a></p></li>
 <li><p>Theoretical Ecology. (2010, September 17). Metropolis-Hastings MCMC in R. <a href="https://theoreticalecology.wordpress.com/2010/09/17/metropolis-hastings-mcmc-in-r/" class="uri">https://theoreticalecology.wordpress.com/2010/09/17/metropolis-hastings-mcmc-in-r/</a></p></li>
 </ul>
 </div>
