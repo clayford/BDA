@@ -1,7 +1,7 @@
 # Bayesian Data Analysis, Part 1
 # Clay Ford
 # UVA Library StatLab
-# Spring 2024
+# Spring 2026
 
 # Code along answers
 
@@ -132,7 +132,7 @@ summary(blm_cereal)
 #    plotfun = "stat_grouped" as we did above
 pp_check(blm_cereal)
 
-pp_check(blm_cereal, plotfun = "stat_grouped", stat = "median", 
+pp_check(blm_cereal, plotfun = "stat_grouped", stat = "mean", 
          group = "design")
 
 # CODE ALONG 4 ------------------------------------------------------------

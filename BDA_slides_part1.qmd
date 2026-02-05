@@ -27,6 +27,7 @@ knitr:
 - Conceptual overview of basic Bayesian data analysis
 - How to run a Bayesian analysis using the `rstanarm` package
 - How to assess convergence and model fit
+- How to work with posterior distributions
 
 ## Motivating example
 
@@ -91,64 +92,65 @@ plot(density(bm1.df$`(Intercept)`), main = "Posterior", ylab = "",
 
 ## Example of using posterior distribution
 
-There's about 74% probability that the mean backpack weight is between 15.5 and 16.5 lbs.
+There's about 95% probability that the mean backpack weight is between 15.2 and 16.9 lbs.
 
 ```{r echo=FALSE, fig.height=5}
-plot(density(bm1.df$`(Intercept)`), main = "Posterior", xlab = "possible means")
-abline(v = 15.5, lty=2)
-abline(v = 16.5, lty=2)
-text(x = 16.5, y = 0.7, labels = "P(15.5 < m < 16.5) = 0.74", pos = 4)
+plot(density(bm1.df$`(Intercept)`), main = "Posterior", 
+     xlab = "possible means", xlim = c(14, 18))
+abline(v = 15.17, lty=2)
+abline(v = 16.96, lty=2)
+text(x = 15.5, y = 0.1, labels = "P(15.2 < m < 16.9) = 0.95", pos = 4)
 ```
 
 
-## Another motivating example
+<!-- ## Another motivating example -->
 
-Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Is one brand superior?
+<!-- Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Is one brand superior? -->
 
-- Take 25 samples of each brand and calculate mean time until batteries run dead for each brand
-- Calculate difference between means: 0.86 hours
-- Appears one brand is superior
+<!-- - Take 25 samples of each brand and calculate mean time until batteries run dead for each brand -->
+<!-- - Calculate difference between means: 0.86 hours -->
+<!-- - Appears one brand is superior -->
 
-If I do this again, will I get the same basic result? Or will the result substantially change? How certain are we about the 0.86 estimate?
+<!-- If I do this again, will I get the same basic result? Or will the result substantially change? How certain are we about the 0.86 estimate? -->
 
-## The traditional approach
+<!-- ## The traditional approach -->
 
-Assume there is some fixed but unknown difference in means. If we had access to all batteries and unlimited time, we could estimate the true difference in means.
+<!-- Assume there is some fixed but unknown difference in means. If we had access to all batteries and unlimited time, we could estimate the true difference in means. -->
 
-- Use 0.86 as our estimate
-- calculate a 95% CI of difference: (0.39, 1.34)
-- We might say we're 95% confident the true difference is between 0.39 and 1.34
+<!-- - Use 0.86 as our estimate -->
+<!-- - calculate a 95% CI of difference: (0.39, 1.34) -->
+<!-- - We might say we're 95% confident the true difference is between 0.39 and 1.34 -->
 
-If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. (Reminder: A CI is not a probability interval.)
+<!-- If we were to repeat this process many, many times, 95% of the confidence intervals would contain the true value. (Reminder: A CI is not a probability interval.) -->
 
-We might also do a t-test to estimate the probability of getting a difference as large (or larger) if the true difference was 0 (i.e., a _p-value_).
+<!-- We might also do a t-test to estimate the probability of getting a difference as large (or larger) if the true difference was 0 (i.e., a _p-value_). -->
 
-## The Bayesian approach
+<!-- ## The Bayesian approach -->
 
-Instead of estimating some "true" value, we instead estimate the _probability distribution_ of possible differences in means.
+<!-- Instead of estimating some "true" value, we instead estimate the _probability distribution_ of possible differences in means. -->
 
-* begin with a _prior_ distribution of how we believe the difference in means are distributed
-* update the prior distribution using the data we collected to obtain a _posterior_ distribution using _Bayes' theorem_
-* use the posterior distribution to describe the difference in means
-
-
-## Example of a prior distribution
-
-Perhaps we're not sure which brand is better. A possible prior distribution might look like this, a $N(0,3)$ distribution.
-
-![](img/d_prior.jpeg)
+<!-- * begin with a _prior_ distribution of how we believe the difference in means are distributed -->
+<!-- * update the prior distribution using the data we collected to obtain a _posterior_ distribution using _Bayes' theorem_ -->
+<!-- * use the posterior distribution to describe the difference in means -->
 
 
-## Example of a posterior distribution
+<!-- ## Example of a prior distribution -->
 
-After observing our data we use _Bayes' theorem_ to update our prior distribution to get a posterior distribution.
+<!-- Perhaps we're not sure which brand is better. A possible prior distribution might look like this, a $N(0,3)$ distribution. -->
 
-![](img/d_posterior1.jpeg)
+<!-- ![](img/d_prior.jpeg) -->
 
-## Example of using posterior distribution
 
-There's about a 95% probability the mean difference is between 0.4 and 1.3.
-![](img/d_posterior2.jpeg)
+<!-- ## Example of a posterior distribution -->
+
+<!-- After observing our data we use _Bayes' theorem_ to update our prior distribution to get a posterior distribution. -->
+
+<!-- ![](img/d_posterior1.jpeg) -->
+
+<!-- ## Example of using posterior distribution -->
+
+<!-- There's about a 95% probability the mean difference is between 0.4 and 1.3. -->
+<!-- ![](img/d_posterior2.jpeg) -->
 
 
 
@@ -246,7 +248,7 @@ mod1 <- glm(backpacks ~ 1, data = dat,
 confint(mod1)
 ```
 
-Same models as before:
+Same model as before:
 
 $$\text{height}_i \sim N(\mu, \sigma)$$
 
@@ -280,90 +282,90 @@ posterior_interval(bm1, prob = 0.95,
 
 ```
 
-## Traditional approach: battery data
+<!-- ## Traditional approach: battery data -->
 
-Calculate a confidence interval using `t.test()`
+<!-- Calculate a confidence interval using `t.test()` -->
 
-```{r cache=TRUE}
-bat <- read.csv("data/batteries.csv")
-t.test(y ~ grp, data = bat)
-```
-
-
-## Traditional approach: battery data
-
-Can also analyze the data using a linear model.
-
-```{r cache=TRUE}
-lm.out <- lm(y ~ grp, data = bat)
-```
-
-The model in this case:
-
-$$\text{battery life}_i \sim N(\mu = \beta_0 + \beta_1\text{ grp}, \sigma)$$
-
-where $\beta_0$ is mean of group 0, $\beta_1$ is the difference in means between group 1 and group 0, and $\sigma$ is the pooled standard deviation.
-
-## Traditional approach: battery data
-
-```{r}
-summary(lm.out)
-```
-
-The mean for group 0 is 10.1687 and the difference in means is 0.8636. The pooled standard deviation is 0.8371.
+<!-- ```{r cache=TRUE} -->
+<!-- bat <- read.csv("data/batteries.csv") -->
+<!-- t.test(y ~ grp, data = bat) -->
+<!-- ``` -->
 
 
-## Traditional approach: battery data
+<!-- ## Traditional approach: battery data -->
 
-We can also extract a confidence interval from this model:
+<!-- Can also analyze the data using a linear model. -->
 
-```{r}
-confint(lm.out, parm = "grp")
-```
+<!-- ```{r cache=TRUE} -->
+<!-- lm.out <- lm(y ~ grp, data = bat) -->
+<!-- ``` -->
 
-This basically matches what we get with the `t.test()` function, with a change in sign.
+<!-- The model in this case: -->
 
-```{r}
-t.test(y ~ grp, data = bat)$conf.int
-```
+<!-- $$\text{battery life}_i \sim N(\mu = \beta_0 + \beta_1\text{ grp}, \sigma)$$ -->
 
-The linear model estimates group 1 - group 0, while the t-test estimated group 0 - group 1.
+<!-- where $\beta_0$ is mean of group 0, $\beta_1$ is the difference in means between group 1 and group 0, and $\sigma$ is the pooled standard deviation. -->
 
-The slight differences are due to the `t.test()` function performing Welch's t-test by default, which allows for unequal variances between groups. 
+<!-- ## Traditional approach: battery data -->
 
+<!-- ```{r} -->
+<!-- summary(lm.out) -->
+<!-- ``` -->
 
-## Traditional approach: battery data
-
-Once again we can use `glm()` with `family = gaussian`.
-
-```{r message=FALSE}
-glm.out <- glm(y ~ grp, data = bat, family = gaussian)
-confint(glm.out, parm = "grp")
-```
+<!-- The mean for group 0 is 10.1687 and the difference in means is 0.8636. The pooled standard deviation is 0.8371. -->
 
 
-## Bayesian approach: battery data
+<!-- ## Traditional approach: battery data -->
 
-Again, we can transition smoothly to a Bayesian analysis using rstanarm. The syntax is practically the same with an argument for the prior.
+<!-- We can also extract a confidence interval from this model: -->
 
-```{r echo=FALSE, message=FALSE}
-bm.out <- readRDS("rds/bmod2.Rds")
-```
+<!-- ```{r} -->
+<!-- confint(lm.out, parm = "grp") -->
+<!-- ``` -->
+
+<!-- This basically matches what we get with the `t.test()` function, with a change in sign. -->
+
+<!-- ```{r} -->
+<!-- t.test(y ~ grp, data = bat)$conf.int -->
+<!-- ``` -->
+
+<!-- The linear model estimates group 1 - group 0, while the t-test estimated group 0 - group 1. -->
+
+<!-- The slight differences are due to the `t.test()` function performing Welch's t-test by default, which allows for unequal variances between groups.  -->
 
 
-```{r eval=FALSE}
-bm.out <- stan_glm(y ~ grp, data = bat, 
-                   family = gaussian,   
-                   prior = normal(0,3))
-```
+<!-- ## Traditional approach: battery data -->
 
-Instead of a confidence interval we obtain a Bayesian uncertainty interval:
+<!-- Once again we can use `glm()` with `family = gaussian`. -->
 
-```{r}
-posterior_interval(bm.out, prob = 0.95, 
-                   pars = "grp")
+<!-- ```{r message=FALSE} -->
+<!-- glm.out <- glm(y ~ grp, data = bat, family = gaussian) -->
+<!-- confint(glm.out, parm = "grp") -->
+<!-- ``` -->
 
-```
+
+<!-- ## Bayesian approach: battery data -->
+
+<!-- Again, we can transition smoothly to a Bayesian analysis using rstanarm. The syntax is practically the same with an argument for the prior. -->
+
+<!-- ```{r echo=FALSE, message=FALSE} -->
+<!-- bm.out <- readRDS("rds/bmod2.Rds") -->
+<!-- ``` -->
+
+
+<!-- ```{r eval=FALSE} -->
+<!-- bm.out <- stan_glm(y ~ grp, data = bat,  -->
+<!--                    family = gaussian,    -->
+<!--                    prior = normal(0,3)) -->
+<!-- ``` -->
+
+<!-- Instead of a confidence interval we obtain a Bayesian uncertainty interval: -->
+
+<!-- ```{r} -->
+<!-- posterior_interval(bm.out, prob = 0.95,  -->
+<!--                    pars = "grp") -->
+
+<!-- ``` -->
 
 
 
@@ -382,9 +384,9 @@ posterior_interval(bm.out, prob = 0.95,
 - `rstanarm` provides _weakly informative_ priors by default. (ie, rules out extreme positive or negative values)
 - _Uninformative priors_ place equal weight on all possible values (not recommended)
 - Using the default priors usually leads to similar results obtained by traditional modeling
-- To see the priors, call the `prior_summary` function on the model object
+- To see the priors, call the `prior_summary()` function on the model object
 
-Let's go to the R script and work with our examples.
+Let's go to the R script and work some examples.
 
 ## Checking sampling quality
 
@@ -533,6 +535,10 @@ mean(post_samp$`(Intercept)` > 16)
 ```
 
 ## Working directly with posterior distributions
+
+```{r echo=FALSE, message=FALSE}
+bm.out <- readRDS("rds/bmod2.Rds")
+```
 
 Let's say we want to estimate the probability that the difference in battery life is greater than 1 hour. Notice we specify the `grp` parameter with the `$` operator. That's because there are three parameters to choose from (`Intercept`, `grp`, and `sigma`)
 

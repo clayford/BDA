@@ -9,7 +9,7 @@
 # or run install.packages("rstanarm")
 
 library(rstanarm)
-
+library(emmeans)
 
 # backpack survey ---------------------------------------------------------
 
@@ -81,7 +81,11 @@ bmod1
 
 # The medians are the medians of the posterior distributions.
 
-# The MAD_SD summarizes the spread of the posterior distribution. MAD = "Median Absolute Deviation". Technically, it's the median of the absolute value of deviations of all points from the median, multiplied by 1.483. Multiplying by 1.483 reproduces the standard deviation in the special case of a normal distribution.
+# The MAD_SD summarizes the spread of the posterior distribution. MAD = "Median
+# Absolute Deviation". Technically, it's the median of the absolute value of
+# deviations of all points from the median, multiplied by 1.483. Multiplying by
+# 1.483 reproduces the standard deviation in the special case of a normal
+# distribution.
 
 # extract the posterior distributions
 pd <- as.data.frame(bmod1)
@@ -158,9 +162,10 @@ curve(dexp(x, rate = 0.23),
 # The last one, NULL, means a uniform prior giving equal weight to -Inf to Inf
 
 
-
 # battery experiment ------------------------------------------------------
-
+ 
+# Examine two brands of rechargeable batteries. How long do they run (in hours) before exhausted? Is one brand superior?
+   
 # read in data
 bat <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/batteries.csv")
 aggregate(y ~ grp, data = bat, FUN = mean)
@@ -308,6 +313,8 @@ confint(mod2, parm = "footC")
 # 2) Repeat the Bayesian analysis but this time with your own priors. Call the
 # model "bmod6". Set the intercept prior to normal(6,1) and coefficients prior
 # to normal(0.4,0.2).
+
+
 
 
 
@@ -481,14 +488,11 @@ summary(lm_cereal)
 # 2) Create a trace plot to assess convergence.
 
 
-
 # 3) How does MCSE, Rhat and n_eff look?
-
 
 
 # 4) Perform two posterior predictive checks: The default and one using 
 #    plotfun = "stat_grouped" as we did above
-
 
 
 # back to presentation.
@@ -539,7 +543,7 @@ quantile(post_samp2$`(Intercept)` + post_samp2$grp,
 
 # can also use the emmeans package to work with posterior distributions.
 # Note the intervals are Highest Posterior Density (HPD) intervals.
-library(emmeans)
+# The HPD is the shortest interval to contain the specified probability
 emmeans(bmod1, specs = ~1)
 emmeans(bmod4, specs = "grp")
 
@@ -563,10 +567,7 @@ coef(blm_cereal) # medians of posterior distributions
 # 1) What is the estimated probability the difference between design 3 and
 # design 1 is greater than 4?
 
-
-
 # 2) Calculate a 95% credibility interval for the mean of design 3.
-
 
 
 # 3) Calculate a 95% credibility interval for the difference between design 3

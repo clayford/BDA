@@ -32,12 +32,14 @@ interest: the probability of having an Apple computer.
 The Frequentist approach can be carried out using the `prop.test()` function:
 
 ```{r}
-prop.test(x = sum(y), n = length(y))
+prop.test(x = sum(y), n = length(y), correct = FALSE)
 ```
 
+We estimate the proportion of students with Apple computers to be about 0.32 with a 95% confidence interval of [0.21, 0.46].
+
 Bayesian inference does not make a point estimate of the parameter, but
-instead estimates the probability distribution of possible values for the
-parameter. This is the posterior distribution.
+instead estimates the _probability distribution_ of possible values for the
+parameter. This is the _posterior distribution_.
 
 Now we use Markov Chain Monte Carlo to work "backwards" and estimate a
 posterior probability distribution for the parameter of interest.
@@ -100,7 +102,9 @@ distribution with mean 0.4 and standard deviation 0.15.
 Here's what the prior distribution looks like:
 
 ```{r}
-curve(dnorm(x, mean = 0.4, sd = 0.15), from = 0, to = 1)
+curve(dnorm(x, mean = 0.4, sd = 0.15), 
+      from = 0.4 - 2.5*0.15, 
+      to = 0.4 + 2.5*0.15)
 ```
 
 We define a prior distribution _function_ which returns the density for a
@@ -112,7 +116,7 @@ prior <- function(param){
   }
 ```
 
-For example, if the proposed parameter is 0.34...
+For example, if the proposed parameter is 0.33...
 
 ```{r}
 prior(0.33)
