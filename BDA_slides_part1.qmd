@@ -209,7 +209,7 @@ mod1 <- lm(backpacks ~ 1, data = dat)
 
 The intercept-only model:
 
-$$\text{height}_i \sim N(\mu, \sigma)$$
+$$\text{weight}_i \sim N(\mu, \sigma)$$
 
 Where $\mu$ is the intercept and $\sigma$ is the residual standard error.
 
