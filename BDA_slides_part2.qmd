@@ -28,6 +28,7 @@ knitr:
 - Review some basic concepts from Part 1
 - Implement more complex Bayesian analyses
 - model visualization
+- model comparison
 
 
 ## Review: Bayesian statistics
@@ -177,7 +178,7 @@ sigma(m2)
 
 As before, instead of estimating parameters, the Bayesian approach is to **estimate the distributions of parameters**.
 
-We propose a prior distribution for the betas and $\sigma$, and update those distributions using a likelihood and the data.
+We propose prior distributions for the betas and $\sigma$, and update those distributions using a likelihood and the data.
 
 ## Likelihood
 
@@ -507,7 +508,7 @@ Let's say we have the following models:
 
   $$y = \beta_0 + \beta_1x1 + \beta_2x2$$
   
-  $$y = \beta_0 + \beta_1x1 + \beta_2x2 + \beta_3x1 \times \beta_2x2$$
+  $$y = \beta_0 + \beta_1x1 + \beta_2x2 + \beta_3x1 \times x2$$
 
 Which model is "best"? 
 
@@ -537,7 +538,7 @@ Models can also be compared using Cross Validation (CV).
 4. Repeat 1-3 such that all data gets a turn being held out
 5. Take average of performance
 
-A model with lower mean squared error is presumably better.
+Do CV for all models. A model with lower mean squared error is presumably better.
 
 ## Leave One Out CV
 

@@ -14,7 +14,7 @@ library(carData)
 # level, and illness severity.
 
 ps <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/patient_satisfaction.csv")
-# Source: Applied Linear Statistical Models, 5th Edition (page 250)
+# Source: Applied Linear Statistical Models, 5th Edition (Kutner et al, p. 250)
 
 # ps = patient satisfaction score (dependent variable)
 # age = age of patient
@@ -102,17 +102,17 @@ prior_summary(mod1)
 # prior for intercept
 curve(dnorm(x, mean = 62, sd = 43), 
       from = 62 + -3*43, to = 62 + 3*43, 
-      xlab = "prior for intercept")
+      main = "prior for intercept", xlab = "")
 
 # prior for age
 curve(dnorm(x,mean = 0, sd = 4.83), 
       from = -3*4.83, to = 3*4.83,
-      xlab = "prior for age")
+      main = "prior for age", xlab = "")
 
 # prior for sigma; notice we dexp()
 curve(dexp(x, rate = 0.058), 
       from = 0, to = 6/0.058, 
-      xlab = "prior for sigma")
+      main = "prior for sigma", xlab = "")
 
 
 # Making the default priors explicit in our model code:
@@ -155,7 +155,7 @@ coef(mod1)
 #   by about 1 (all else held constant)
 
 # - for every one unit increase in the illness measure, expected patient
-#   satisfaction decreases by about 0.5 (all else held constant)
+#   satisfaction decreases by about 0.4 (all else held constant)
 
 # - for every one unit increase in the anxiety score, expected patient
 #   satisfaction decreases by about 13 (all else held constant)
@@ -225,16 +225,16 @@ pp_check(mod2)
 # rental rates, and operating expenses for commercial properties in a large
 # city.
 
-prop <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/properties.csv")
-summary(prop)
-pairs(prop)
-
 # Can we model the rental rate as a function of the other variables?
 # rate = rental rate (in thousands)
 # age = age of property
 # expenses = operating expenses and taxes
 # vacancy = proportion of property vacant
 # sqft = total square footage
+
+prop <- read.csv("https://raw.githubusercontent.com/clayford/BDA/master/data/properties.csv")
+summary(prop)
+pairs(prop)
 
 lm2 <- lm(rate ~ age + expenses + vacancy + sqft, data = prop)
 summary(lm2)
@@ -266,6 +266,8 @@ mod3 <- stan_glm(ps ~ age + illness + anxiety + age:illness,
                  family = gaussian)
 
 prior_summary(mod3)
+priors <- prior_summary(mod3)
+priors$prior
 
 # model summary
 summary(mod3)
@@ -308,9 +310,9 @@ ggpredict(mod3, terms = "illness",
 # Model prestige as a function of income, type of occupation, and years of
 # education, with an interaction between income and type of occupation.
 
-pmod <- stan_glm(prestige ~ income*type + education, 
+pmod <- stan_glm(prestige ~ income * type + education, 
                  data = Prestige, 
-                 family = gaussian)
+                 family = gaussian, seed = 2026)
 pmod
 summary(pmod)
 pp_check(pmod)
@@ -332,15 +334,21 @@ ggpredict(pmod, terms = "education") |> plot()
 # calculate one prediction for income = 1000, type = wc, and education = 10.8
 ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
 
+# actual education mean is 10.7951
+# calculated only for complete cases
+mean(Prestige$education[complete.cases(Prestige)])
+
 # To get that for a Bayesian model, we make 4000 predictions because we have
-# 4000 samples. The x matrix below contains the intercept (1), income (1000),
-# prof (0), wc (1), education (10.8) prof*income (0) and wc*income (1000).
-# The betas matrix contains the 4000 posterior samples.
+# 4000 samples. 
 parms <- as.matrix(pmod)
 head(parms)
 
+# The x matrix below contains the intercept (1), income (1000), prof (0), wc
+# (1), education (10.7951) prof*income (0) and wc*income (1 x 1000). The parms
+# matrix contains the 4000 posterior samples.
+
 # enter predictor values as a matrix
-x <- matrix(c(1, 1000, 0, 1, 10.8, 0, 1000*1), ncol = 1)
+x <- matrix(c(1, 1000, 0, 1, 10.7951, 0, 1000*1), ncol = 1)
 x
 
 # use matrix algebra to make predictions (all but sigma)
@@ -349,8 +357,8 @@ head(est) # 4000 predictions
 
 # The posterior_linpred() function does this for us
 posterior_linpred(pmod, newdata = data.frame(income = 1000, 
-                                             type = "wc", 
-                                             education = 10.8)) |> 
+                                             type = factor("wc"), 
+                                             education = 10.7951)) |> 
   head()
 
 # the estimate is the median of the 4000 predictions
@@ -361,6 +369,7 @@ posterior_interval(est, prob = 0.95)
 
 # compare to ggpredict
 ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
+
 
 
 # CODE ALONG 2 ------------------------------------------------------------
@@ -514,6 +523,11 @@ ggpredict(arthritis.blm, terms = "Treatment",
 # (4) create an effect plot to visualize the interaction. 
 
 
+
+
+# back to presentation
+
+
 # Model comparison --------------------------------------------------------
 
 # Traditional approach uses test statistics and/or AIC/BIC;
@@ -528,7 +542,9 @@ m3 <- glm(Better ~ Treatment + Sex + Age,
           data = arthritis, 
           family = binomial) 
 
-# compare using partial F test
+# compare using partial F tests. Two tests: 
+# NULL of test 1: model 1 = model 2
+# NULL of test 2: model 2 = model 3
 anova(m1, m2, m3)
 
 # compare using information criteria
@@ -539,11 +555,17 @@ BIC(m1, m2, m3)
 
 # Can also use Cross Validation to compare models
 # Leave one out (LOO)
-# common cost function: mean((obs - predicted)^2)
+# common cost function: mean((obs - predicted)^2), aka MSE
 # smaller cost means a better performing model
 
+# First get MSE for model tested with same data to fit model
+# too optimistic
+mean((arthritis$Better - predict(m1, type = "response"))^2)
+
+# Now get MSE using LOO CV
+
 # vector to store difference squared
-e <- numeric(length = nrow(arthritis))
+ds <- numeric(length = nrow(arthritis))
 
 # for loop to run LOO CV
 for(i in 1:nrow(arthritis)){
@@ -551,14 +573,16 @@ for(i in 1:nrow(arthritis)){
             data = arthritis,
             subset = -i,       # each time leave out the ith obs
             family = binomial) 
-  # fitted value for the ith obs left out of model
+
+    # fitted value for the ith obs left out of model
   fit <- predict(m, newdata = arthritis[i,], type = "response")
-  # save difference squared
-  e[i] <- (arthritis$Better[i] - fit)^2
+
+    # save difference squared
+  ds[i] <- (arthritis$Better[i] - fit)^2
 }
 
 # calculate LOO CV
-mean(e)
+mean(ds)
 
 # A faster way using the cv.glm() function in the boot package
 # does LOO CV by default; set K = 10 to do 10-fold CV
@@ -575,7 +599,6 @@ rbind(m1 = cv.m1$delta[1],
       m3 = cv.m3$delta[1])
 
 # We can also use LOO cross validation for Bayesian models 
-
 # Refit Bayesian models with default priors
 bm1 <- stan_glm(Better ~ Treatment,
                 data = arthritis,
@@ -607,7 +630,10 @@ loo_compare(list("model 1" = loo1, "model 2" = loo2, "model 3" = loo3))
 # printing the loo() result shows additional details
 loo3
 
-# elpd = estimated log score with uncertainty (SE)
+# elpd_loo, aka "estimated log score" 
+# similar to MSE used above with traditional models
+# In this case, higher is better
+
 # looic = -2 * elpd_loo (similar to deviance)
 # p_loo = estimated "effective number of parameters". 
 
@@ -625,35 +651,39 @@ loo3
 # influential observations have high k values."
 
 # plot() a loo object can help identify outliers with respect to model 
+# PSIS = Pareto smoothed importance-sampling
 plot(loo3)
 
 # fit model that has "outliers"
-# all two way interactions;
+# fit all two way interactions;
 # notice the seed argument to make results replicable
 bm4 <- stan_glm(Better ~ (Treatment + Sex + Age)^2,
                 data = arthritis,
-                family = binomial, seed = 123)
+                family = binomial, seed = 555)
 bm4
 
 # perform LOO CV
 loo4 <- loo(bm4)
+loo4
 plot(loo4)
 plot(loo4, label_points = TRUE)
 arthritis[52,]
 
+# Only male on Placebo who reported getting "better"
+
 # following the directions in the warning does literal LOO CV for observation 52 
 loo4a <- loo(bm4, k_threshold = 0.7)
+loo4a
 plot(loo4a) # obs 52 no longer plotted
 
 # No Pareto k value is calculated for obs 52
 loo4a$diagnostics$pareto_k[52]
 
-# But is this model any better? No.
+# Compare to model bm3
 loo_compare(loo3, loo4a)
 
 # See also the loo package glossary
 # ?`loo-glossary`
-
 
 
 # YOUR TURN #4 ------------------------------------------------------------
@@ -803,6 +833,47 @@ loo_compare(lapply(mget(ls(pattern = "^ps_")), loo))
 # - loo_compare() accepts a list of loo objects
 
 
+# Appendix: calculate ELPD using same data as used to fit model -----------
+
+# Calculate ELPD for model bm3 with same data used to fit model
+bm3 <- stan_glm(Better ~ Treatment + Sex + Age,
+                data = arthritis,
+                family = binomial) 
+
+# First, get log posterior predictive densities using log_lik()
+ll_bm3 <- log_lik(bm3)
+
+# Next exponentiate the columns, take the mean, and take the log again
+ppd_all <- log(apply(ll_bm3, 2, function(x)mean(exp(x))))
+
+# First 6
+head(ppd_all)
+
+# summing produces the ELPD, a type of cost, similar to MSE
+sum(ppd_all)
+
+# Compare to ELPD when calculated using LOO CV
+# Notice the LOO version is lower (less optimistic)
+loo3 <- loo(bm3)
+loo3
+
+# extract the LOO versions of the pointwise predictive densities;
+# each observation's pointwise predictive density is calculated assuming that
+# observation was left out of the model
+ppd_loo <- loo3$pointwise[,"elpd_loo"]
+
+# Notice the LOO ppd is lower (less optimistic) for each obs
+head(cbind(ppd_all, ppd_loo))
+
+# Summing ppd_loo yields the elpd_loo
+sum(ppd_loo)
+loo3
+
+# Again, notice this is much higher than the elpd produced from
+sum(ppd_all)
+
+
+
 # Appendix: bonus analysis ------------------------------------------------
 
 
@@ -883,6 +954,6 @@ loo_compare(loo(bm1), loo(bm2))
 loo_compare(loo(bm1, k_threshold = 0.7), 
             loo(bm2, k_threshold = 0.7))
 
-
+# model 1 appears preferable
 
 ## END OF SCRIPT
