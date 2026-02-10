@@ -534,7 +534,7 @@ Models can also be compared using Cross Validation (CV).
 
 1. Fit a model with portion of data held out
 2. Use the fitted model to predict outcome for held out data
-3. Calculate "performance" using a metric such as mean squared error 
+3. Calculate "performance" using a metric such as mean squared error: $\frac{1}{n}\sum_{i=1}^{n} (y_i - \hat{y_i})^2$ 
 4. Repeat 1-3 such that all data gets a turn being held out
 5. Take average of performance
 
