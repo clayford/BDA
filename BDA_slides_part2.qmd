@@ -36,7 +36,7 @@ knitr:
 * The objective of a Bayesian analysis is a _posterior distribution_ of our parameters of interest
 * To obtain a posterior distribution, we must start with a _prior distribution_ and a _likelihood_
 * Using _Markov chain Monte Carlo (MCMC)_ we sample from the prior and likelihood to estimate the posterior distributions
-* The `rstanarm` package allows us to perform common Bayesian analyses without having to learn Stan
+* The `rstanarm` package allows us to perform common Bayesian analyses using familiar base R modeling syntax
 
 ## Review: Example
 
@@ -290,36 +290,36 @@ posterior_interval(bm2)
 
 The interaction appears to be small and we're uncertain whether it's positive or negative. 
 
-## Another example
+<!-- ## Another example -->
 
-The carData package contains data on the prestige of Canadian occupations from the early 1970s. "Prestige" is measured on a scale from 0 - 100, where higher values mean higher prestige.
+<!-- The carData package contains data on the prestige of Canadian occupations from the early 1970s. "Prestige" is measured on a scale from 0 - 100, where higher values mean higher prestige. -->
 
-We attempt to understand the variability of prestige by modeling it as a function of income, type of occupation (bc, wc, prof), and years of education using a Normal likelihood:
+<!-- We attempt to understand the variability of prestige by modeling it as a function of income, type of occupation (bc, wc, prof), and years of education using a Normal likelihood: -->
 
-$$\text{prestige}_i \sim N(\beta_0 + \beta_1 \text{education} + \beta_2 \text{income} + \beta_3 \text{type} + \beta_4 \text{income} \times \text{type}, \sigma)$$
+<!-- $$\text{prestige}_i \sim N(\beta_0 + \beta_1 \text{education} + \beta_2 \text{income} + \beta_3 \text{type} + \beta_4 \text{income} \times \text{type}, \sigma)$$ -->
 
-Note the interaction: this says the effect of income on prestige depends on type of occupation (and vice versa).
+<!-- Note the interaction: this says the effect of income on prestige depends on type of occupation (and vice versa). -->
 
-## Fitting the model
+<!-- ## Fitting the model -->
 
-Fit the model using `stan_glm()` with default priors.
+<!-- Fit the model using `stan_glm()` with default priors. -->
 
-```{r echo=FALSE}
-bm3 <- readRDS("rds/prestige_bm3.rds")
-```
+<!-- ```{r echo=FALSE} -->
+<!-- bm3 <- readRDS("rds/prestige_bm3.rds") -->
+<!-- ``` -->
 
-```{r eval=FALSE}
-library(carData)
-bm3 <- stan_glm(prestige ~ education + income + type + income:type, 
-                data = Prestige, 
-                family = gaussian)
-```
+<!-- ```{r eval=FALSE} -->
+<!-- library(carData) -->
+<!-- bm3 <- stan_glm(prestige ~ education + income + type + income:type,  -->
+<!--                 data = Prestige,  -->
+<!--                 family = gaussian) -->
+<!-- ``` -->
 
-The interactions seems negative but small.
+<!-- The interactions seems negative but small. -->
 
-```{r}
-posterior_interval(bm3)
-```
+<!-- ```{r} -->
+<!-- posterior_interval(bm3) -->
+<!-- ``` -->
 
 
 ## Visualizing interactions
@@ -353,12 +353,12 @@ ggpredict(bm2, terms = c("age","illness")) |>
 ```
 
 
-## An effect plot for `income:type`
+<!-- ## An effect plot for `income:type` -->
 
-```{r}
-ggpredict(bm3, terms = c("income","type")) |> 
-  plot()
-```
+<!-- ```{r} -->
+<!-- ggpredict(bm3, terms = c("income","type")) |>  -->
+<!--   plot() -->
+<!-- ``` -->
 
 
 
@@ -371,19 +371,19 @@ ggpredict(bm2, terms = c("age","illness[45,50,55]")) |>
   plot()
 ```
 
-## Customizing the effect plot
+<!-- ## Customizing the effect plot -->
 
-We can also specify a range of values:
+<!-- We can also specify a range of values: -->
 
-```{r}
-ggpredict(bm3, terms = c("income[700:10000 by=100]","type")) |> 
-  plot()
-```
+<!-- ```{r} -->
+<!-- ggpredict(bm3, terms = c("income[700:10000 by=100]","type")) |>  -->
+<!--   plot() -->
+<!-- ``` -->
 
 
 ## Effect plots for main effects
 
-Effect plots are useful for main effects as well (ie, predictors not involved in an interaction)
+Effect plots are useful for main effects as well (i.e., predictors not involved in an interaction)
 
 ```{r fig.height=5}
 ggpredict(bm2, terms = "anxiety") |> plot()

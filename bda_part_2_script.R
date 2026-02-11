@@ -37,27 +37,8 @@ coef(lm1)
 sigma(lm1)
 confint(lm1)
 
-# Is the model "good"? If so, it should simulate data similar to the data we
-# observed.
-
-# simulate a single set of patient satisfaction score using model coefficients.
-y <- rnorm(n = nrow(ps), 
-           mean = 158.491 + -1.142*ps$age + -0.443*ps$illness + 
-             -13.47*ps$anxiety,
-           sd = 10.058)
-
-# how does simulated data compare to observed data?
-plot(density(ps$ps), ylim = c(0, 0.03))
-lines(density(y), col = "blue")
-
-# use the simulate() function to make this easier. Do it 50 times.
-# This looks good
-sim1 <- simulate(lm1, nsim = 50)
-plot(density(ps$ps), ylim = c(0, 0.03))
-for(i in 1:50)lines(density(sim1[[i]]), col = "powderblue")
-
-
 # Bayesian approach
+
 # - fit a simple additive model with default priors;
 # - Model patient satisfaction as a weighted sum of age, illness and anxiety;
 # - "family = gaussian" says we think the dependent variable is conditionally 
@@ -135,6 +116,11 @@ summary(mod1)
 # running `pp_check()`. Hopefully the mean_PPD is similar to the mean of the
 # response variable. If not, something may be wrong.
 
+# visualize posterior distributions. This is the objective of Bayesian modeling.
+plot(mod1, plotfun = "dens")
+plot(mod1, plotfun = "dens", pars = c("age", "illness", "anxiety"))
+
+
 # Is this a good model? Assess model fit with posterior predictive check. 
 pp_check(mod1)
 
@@ -147,75 +133,54 @@ pp_check(mod1)
 # Each of the light blue lines is a prediction generated using a single draw of
 # the model parameters from the posterior distribution.
 
+# see "Appendix: pp_check() by hand" for how this function works
+
 
 # Some naive interpretation, judging by medians of the distributions:
 coef(mod1)
 
-# - for every one year increase in age, expected patient satisfaction decreases
-#   by about 1 (all else held constant)
+# AGE
+# the average difference in patient satisfaction, comparing two people with
+# equal anxiety and illness but one year difference in age, is about -1.
 
-# - for every one unit increase in the illness measure, expected patient
-#   satisfaction decreases by about 0.4 (all else held constant)
+# ILLNESS
+# the average difference in patient satisfaction, comparing two people with
+# equal anxiety and age but one unit difference in illness, is about -0.4.
 
-# - for every one unit increase in the anxiety score, expected patient
-#   satisfaction decreases by about 13 (all else held constant)
+# ANXIETY
+# the average difference in patient satisfaction, comparing two people with
+# equal age and illness but one unit difference in anxiety is about -13.
 
-# - the intercept is the expected patient satisfaction for someone age 0, with
-#   illness = 0 and anxiety = 0. Not useful.
+# INTERCEPT
+# the intercept is the expected patient satisfaction for someone age 0, with
+# illness = 0 and anxiety = 0. Not useful.
 
-# - sigma is the estimate of the standard deviation of the normal (gaussian)
-#   distribution from which we assume the errors are "drawn".
+# But remember these coefficients are just single summary measures of entire
+# probability distributions!
 
 # 90% credibility intervals of coefficients
+# Why is 90% the default; "Computational stability: 90% intervals are more
+# stable than 95% intervals"
 posterior_interval(mod1)
 
 # 95% credibility intervals of coefficients
 posterior_interval(mod1, prob = 0.95)
 
-# visualize posterior distributions. This is the objective of Bayesian modeling.
-plot(mod1, plotfun = "dens")
-plot(mod1, plotfun = "dens", pars = "age")
-plot(mod1, plotfun = "dens", pars = c("age", "illness", "anxiety"))
-
 # The model summary is summarizing 4000 samples; use the as.data.frame()
 # function to create an object that contains the samples.
 mod1_df <- as.data.frame(mod1)
-summary(mod1_df)
 dim(mod1_df)
 
 # We can work with this object to make estimates such as...
 
-# what is the probability the effect of anxiety is less than 0
+# what is the probability the anxiety coefficient is less than 0
 mean(mod1_df$anxiety < 0)
 
-# what is the probability the effect of age is between -1.0 and -0.5
+# what is the probability the age coefficient is between -1.0 and -0.5
 mean(mod1_df$age > -1.0 & mod1_df$age < -0.5)
 
-# what is the probability the effect of illness is less than 0
+# what is the probability the illness coefficient is less than 0
 mean(mod1_df$illness < 0)
-
-
-# fit a model with different prior distributions.
-# These are probably not good priors!
-mod2 <- stan_glm(ps ~ age + illness + anxiety, 
-                 data = ps, 
-                 family = gaussian,
-                 prior_intercept = normal(location = 100, 
-                                          scale = 50), 
-                 prior = normal(location = c(0, 10, 10), 
-                                scale = c(5, 10, 10)), 
-                 prior_aux = NULL) # flat, uniform prior
-
-# evaluate model
-prior_summary(mod2)
-summary(mod2)
-posterior_interval(mod2)
-posterior_interval(mod1) # compare to mod1 that used default priors
-
-# mod2 is more uncertain about the effect of anxiety
-
-# is it a "good" model?
-pp_check(mod2)
 
 
 
@@ -286,9 +251,6 @@ ggpredict(mod3, terms = c("age", "illness")) |> plot()
 # change the order to change which variable is on the x-axis
 ggpredict(mod3, terms = c("illness", "age")) |> plot() 
 
-# Running ggpredict without plot shows the predicted values
-ggpredict(mod3, terms = c("illness", "age"))
-
 # visualize the interaction at ages = 30, 40, 50
 ggpredict(mod3, terms = c("illness", "age [30,40,50]")) |> plot() 
 
@@ -307,6 +269,8 @@ ggpredict(mod3, terms = "illness",
 # the early 1970s. “Prestige” is measured on a scale from 0 - 100, where higher
 # values mean higher prestige.
 
+summary(Prestige[,c("prestige", "education", "income", "type")])
+
 # Model prestige as a function of income, type of occupation, and years of
 # education, with an interaction between income and type of occupation.
 
@@ -315,7 +279,6 @@ pmod <- stan_glm(prestige ~ income * type + education,
                  family = gaussian, seed = 2026)
 pmod
 summary(pmod)
-pp_check(pmod)
 
 # Visualize interactions
 ggpredict(pmod, terms = c("income", "type")) |> plot()
@@ -329,46 +292,8 @@ ggpredict(pmod, terms = c("income[700:10000 by=100]", "type")) |> plot()
 # Visualize the fixed effect of education
 ggpredict(pmod, terms = "education") |> plot()
 
-# How does ggpredict() calculate these values? What is it actually predicting?
-
-# calculate one prediction for income = 1000, type = wc, and education = 10.8
-ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
-
-# actual education mean is 10.7951
-# calculated only for complete cases
-mean(Prestige$education[complete.cases(Prestige)])
-
-# To get that for a Bayesian model, we make 4000 predictions because we have
-# 4000 samples. 
-parms <- as.matrix(pmod)
-head(parms)
-
-# The x matrix below contains the intercept (1), income (1000), prof (0), wc
-# (1), education (10.7951) prof*income (0) and wc*income (1 x 1000). The parms
-# matrix contains the 4000 posterior samples.
-
-# enter predictor values as a matrix
-x <- matrix(c(1, 1000, 0, 1, 10.7951, 0, 1000*1), ncol = 1)
-x
-
-# use matrix algebra to make predictions (all but sigma)
-est <- parms[,-8] %*% x  
-head(est) # 4000 predictions
-
-# The posterior_linpred() function does this for us
-posterior_linpred(pmod, newdata = data.frame(income = 1000, 
-                                             type = factor("wc"), 
-                                             education = 10.7951)) |> 
-  head()
-
-# the estimate is the median of the 4000 predictions
-median(est)  
-
-# the CI is the posterior interval
-posterior_interval(est, prob = 0.95) 
-
-# compare to ggpredict
-ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
+# How does ggpredict() calculate these values?
+# See "Appendix: how ggpredict() calculates values"
 
 
 
@@ -423,10 +348,9 @@ arthritis$Sex <- factor(arthritis$Sex)
 # Better = 0/1 integer indicating better (1) or not (0)
 
 xtabs(~ Better + Treatment, data = arthritis)
-xtabs(~ Better + Sex, data = arthritis)
-stripchart(Age ~ Treatment, data = arthritis, method = "jitter")
-stripchart(Age ~ Better, data = arthritis, method = "jitter")
+xtabs(~ Better + Treatment + Sex, data = arthritis)
 
+# Traditional model fit using glm()
 m <- glm(Better ~ Treatment + Sex + Age,
          data = arthritis,
          family = binomial) 
@@ -510,6 +434,7 @@ ggpredict(arthritis.blm, terms = "Treatment",
 
 # (1) Re-fit the Bayesian arthritis model with an interaction for Treatment and
 # Age. Name the model "arthritis.blm2".
+
 
 
 # (2) view the model summary
@@ -872,6 +797,86 @@ loo3
 # Again, notice this is much higher than the elpd produced from
 sum(ppd_all)
 
+
+# Appendix: posterior predictive check for traditional models -------------
+
+# We can do something similar to a posterior predictive check for traditional
+# models as follows.
+
+# Recall this model:
+lm1 <- lm(ps ~ age + illness + anxiety, data = ps)
+coef(lm1)
+
+# simulate a single set of patient satisfaction scores using model coefficients.
+y <- rnorm(n = nrow(ps), 
+           mean = 158.491 + -1.142*ps$age + -0.443*ps$illness + 
+             -13.47*ps$anxiety,
+           sd = 10.058)
+
+# how does simulated data compare to observed data?
+plot(density(ps$ps), ylim = c(0, 0.03))
+lines(density(y), col = "blue")
+
+# use the simulate() function to make this easier. Do it 50 times.
+# This looks good
+sim1 <- simulate(lm1, nsim = 50)
+plot(density(ps$ps), ylim = c(0, 0.03))
+for(i in 1:50)lines(density(sim1[[i]]), col = "powderblue")
+
+# The difference between this and Bayesian PP checks is that the Bayesian
+# approach uses different samples from the posteriors to generate the model
+# formula each time, whereas the traditional approach uses the same set of
+# coefficients.
+
+
+# Appendix: how ggpredict() calculates values -----------------------------
+
+# How does ggpredict() calculate these values? What is it actually predicting?
+
+
+# Recall this model:
+pmod <- stan_glm(prestige ~ income * type + education, 
+                 data = Prestige, 
+                 family = gaussian, seed = 2026)
+
+# calculate one prediction for income = 1000, type = wc, and education = 10.8
+ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
+
+# actual education mean is 10.7951;
+# calculated only for complete cases
+mean(Prestige$education[complete.cases(Prestige)])
+
+# To get that for a Bayesian model, we make 4000 predictions because we have
+# 4000 samples. 
+parms <- as.matrix(pmod)
+head(parms)
+
+# The x matrix below contains the intercept (1), income (1000), prof (0), wc
+# (1), education (10.7951) prof*income (0) and wc*income (1 x 1000). The parms
+# matrix contains the 4000 posterior samples.
+
+# enter predictor values as a matrix
+x <- matrix(c(1, 1000, 0, 1, 10.7951, 0, 1000*1), ncol = 1)
+x
+
+# use matrix algebra to make predictions (all but sigma)
+est <- parms[,-8] %*% x  
+head(est) # 4000 predictions
+
+# The posterior_linpred() function does this for us
+posterior_linpred(pmod, newdata = data.frame(income = 1000, 
+                                             type = factor("wc"), 
+                                             education = 10.7951)) |> 
+  head()
+
+# the estimate is the median of the 4000 predictions
+median(est)  
+
+# the CI is the posterior interval
+posterior_interval(est, prob = 0.95) 
+
+# compare to ggpredict
+ggpredict(pmod, terms = c("income[1000]", "type[wc]"))
 
 
 # Appendix: bonus analysis ------------------------------------------------
