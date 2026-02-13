@@ -216,20 +216,6 @@ Instead of point estimates for the betas and $\sigma$, we get posterior distribu
 
 [^1]: On startup, rstanarm states "Default priors may change, so it's safest to specify priors, even if equivalent to the defaults."
 
-## Using `stan_glm` with explicit priors
-
-Use the `prior` arguments to specify priors. Below are the default priors. The `normal()` and `exponential()` functions are from `rstanarm`.
-
-```{r eval=FALSE}
-bm <- stan_glm(ps ~ age + illness + anxiety, 
-               data = ps,
-               family = gaussian,
-               prior_intercept = normal(mean(ps$ps),2.5),
-               prior = normal(c(0,0,0),c(2.5,2.5,2.5)),
-               prior_aux = exponential(1))
-
-```
-
 
 ## Evaluating and exploring the model
 
